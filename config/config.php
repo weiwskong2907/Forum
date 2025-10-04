@@ -19,10 +19,8 @@ define('UPLOADS_PATH', ROOT_PATH . '/uploads');
 // Security settings
 define('HASH_COST', 12); // For password hashing
 
-// Session settings
-ini_set('session.cookie_httponly', 1);
-ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 1); // For HTTPS only
+// Session security level
+define('SESSION_SECURE', true); // Set to false for development without HTTPS
 
 // Error reporting (disable in production)
 ini_set('display_errors', 1);

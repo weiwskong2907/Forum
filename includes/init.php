@@ -5,15 +5,15 @@
  * This file is included in all pages and initializes the application
  */
 
-// Start session with secure settings
+// Load configuration first
+require_once __DIR__ . '/../config/config.php';
+
+// Configure and start session
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 1); // For HTTPS only
+ini_set('session.cookie_secure', defined('SESSION_SECURE') ? SESSION_SECURE : 0);
 ini_set('session.cookie_samesite', 'Lax');
 session_start();
-
-// Load configuration
-require_once __DIR__ . '/../config/config.php';
 
 // Autoload classes
 spl_autoload_register(function ($class) {
