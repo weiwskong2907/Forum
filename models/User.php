@@ -179,4 +179,19 @@ class User {
         
         return $this->db->update('users', ['role' => $role], 'user_id = ?', [$userId]);
     }
+    
+    /**
+     * Get latest registered user
+     * 
+     * @return array|null User data or null if not found
+     */
+    public function getLatest() {
+        $query = "SELECT u.user_id, u.username, u.email, u.role, u.created_at 
+                 FROM users u 
+                 WHERE u.is_active = 1 
+                 ORDER BY u.created_at DESC 
+                 LIMIT 1";
+        
+        return $this->db->fetchRow($query);
+    }
 }

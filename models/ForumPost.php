@@ -179,4 +179,16 @@ class ForumPost {
         
         return $result['count'];
     }
+    
+    /**
+     * Count all posts
+     * 
+     * @return int Count
+     */
+    public function countAll() {
+        $query = "SELECT COUNT(*) as count FROM forum_posts";
+        $result = $this->db->fetchRow($query);
+        
+        return $result['count'];
+    }
 }
