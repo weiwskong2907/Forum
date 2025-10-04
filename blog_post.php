@@ -89,6 +89,12 @@ include_once __DIR__ . '/includes/header.php';
                     <span class="ms-3"><i class="fas fa-folder me-1"></i> <?php echo $post['category_name']; ?></span>
                 </div>
                 
+                <?php if (!empty($post['featured_image'])): ?>
+                <div class="post-image mb-4">
+                    <img src="<?php echo BASE_URL . '/' . $post['featured_image']; ?>" class="img-fluid" alt="<?php echo $post['title']; ?>">
+                </div>
+                <?php endif; ?>
+                
                 <div class="post-content mb-4">
                     <?php echo markdownToHtml($post['content']); ?>
                 </div>

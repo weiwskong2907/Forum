@@ -237,4 +237,40 @@ class Database {
     public function __destruct() {
         $this->close();
     }
+    
+    /**
+     * Begin a transaction
+     * 
+     * @return bool Success or failure
+     */
+    public function beginTransaction() {
+        return $this->connection->begin_transaction();
+    }
+    
+    /**
+     * Commit a transaction
+     * 
+     * @return bool Success or failure
+     */
+    public function commit() {
+        return $this->connection->commit();
+    }
+    
+    /**
+     * Rollback a transaction
+     * 
+     * @return bool Success or failure
+     */
+    public function rollback() {
+        return $this->connection->rollback();
+    }
+    
+    /**
+     * Get the last insert ID
+     * 
+     * @return int Last insert ID
+     */
+    public function lastInsertId() {
+        return $this->connection->insert_id;
+    }
 }

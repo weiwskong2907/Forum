@@ -156,60 +156,47 @@ $content = array_slice($content, 0, $limit);
 $totalPages = ceil($totalItems / $limit);
 
 $pageTitle = 'Content Moderation';
-include '../includes/header.php';
+include __DIR__ . '/includes/admin_header.php';
 ?>
 
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-3">
-            <!-- Admin Sidebar -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Admin Dashboard</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="index.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                    </a>
-                    <a href="users.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-users mr-2"></i> User Management
-                    </a>
-                    <a href="content.php" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-file-alt mr-2"></i> Content Moderation
-                    </a>
-                    <a href="forum.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-comments mr-2"></i> Forum Management
-                    </a>
-                    <a href="system_health_check.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-heartbeat mr-2"></i> System Health
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-9">
+        <main class="col-12 px-md-4 py-4">
             <!-- Content Moderation -->
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm border">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Content Moderation</h5>
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-file-earmark-text me-2"></i> Content Moderation
+                    </h5>
                 </div>
                 <div class="card-body">
                     <?php displayFlashMessages(); ?>
                     
                     <!-- Content Type Filter -->
                     <div class="mb-4">
-                        <div class="btn-group" role="group">
-                            <a href="content.php?content_type=all" class="btn btn-outline-primary <?php echo $contentType == 'all' ? 'active' : ''; ?>">All Content</a>
-                            <a href="content.php?content_type=blog" class="btn btn-outline-success <?php echo $contentType == 'blog' ? 'active' : ''; ?>">Blog Posts</a>
-                            <a href="content.php?content_type=blog_comment" class="btn btn-outline-info <?php echo $contentType == 'blog_comment' ? 'active' : ''; ?>">Blog Comments</a>
-                            <a href="content.php?content_type=forum_thread" class="btn btn-outline-primary <?php echo $contentType == 'forum_thread' ? 'active' : ''; ?>">Forum Threads</a>
-                            <a href="content.php?content_type=forum_post" class="btn btn-outline-warning <?php echo $contentType == 'forum_post' ? 'active' : ''; ?>">Forum Posts</a>
+                        <h6 class="mb-3"><i class="bi bi-funnel-fill me-2"></i>Filter by Content Type:</h6>
+                        <div class="btn-group shadow-sm" role="group">
+                            <a href="content.php?content_type=all" class="btn btn-outline-primary <?php echo $contentType == 'all' ? 'active' : ''; ?>">
+                                <i class="bi bi-collection me-1"></i> All Content
+                            </a>
+                            <a href="content.php?content_type=blog" class="btn btn-outline-primary <?php echo $contentType == 'blog' ? 'active' : ''; ?>">
+                                <i class="bi bi-file-earmark-text me-1"></i> Blog Posts
+                            </a>
+                            <a href="content.php?content_type=blog_comment" class="btn btn-outline-primary <?php echo $contentType == 'blog_comment' ? 'active' : ''; ?>">
+                                <i class="bi bi-chat-text me-1"></i> Blog Comments
+                            </a>
+                            <a href="content.php?content_type=forum_thread" class="btn btn-outline-primary <?php echo $contentType == 'forum_thread' ? 'active' : ''; ?>">
+                                <i class="bi bi-chat-square-text me-1"></i> Forum Threads
+                            </a>
+                            <a href="content.php?content_type=forum_post" class="btn btn-outline-primary <?php echo $contentType == 'forum_post' ? 'active' : ''; ?>">
+                                <i class="bi bi-chat-square me-1"></i> Forum Posts
+                            </a>
                         </div>
                     </div>
                     
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
-                            <thead>
+                            <thead class="table-light">
                                 <tr>
                                     <th>Type</th>
                                     <th>Title</th>
@@ -324,4 +311,4 @@ include '../includes/header.php';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/includes/admin_footer.php'; ?>

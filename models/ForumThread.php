@@ -232,7 +232,7 @@ class ForumThread {
      * Toggle sticky status
      * 
      * @param int $threadId Thread ID
-     * @return bool Success or failure
+     * @return bool Success
      */
     public function toggleSticky($threadId) {
         $query = "UPDATE forum_threads SET is_sticky = NOT is_sticky WHERE thread_id = ?";
@@ -275,10 +275,47 @@ class ForumThread {
      * @return bool Success or failure
      */
     public function incrementViewCount($threadId) {
-        $query = "UPDATE forum_threads SET view_count = view_count + 1 WHERE thread_id = ?";
-        $stmt = $this->db->query($query, [$threadId]);
-        
-        return $stmt->affected_rows > 0;
+        try {
+            // First, try to add the column if it doesn't exist
+            $this->ensureViewCountColumnExists();
+            
+            // Then increment the view count
+            $query = "UPDATE forum_threads SET view_count = view_count + 1 WHERE thread_id = ?";
+            $stmt = $this->db->query($query, [$threadId]);
+            
+            return $stmt->affected_rows > 0;
+        } catch (Exception $e) {
+            // Log error and continue
+            error_log("Error incrementing view count: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Ensure view_count column exists in forum_threads table
+     */
+    private function ensureViewCountColumnExists() {
+        try {
+            $query = "ALTER TABLE forum_threads ADD COLUMN IF NOT EXISTS view_count INT UNSIGNED NOT NULL DEFAULT 0";
+            $this->db->query($query);
+        } catch (Exception $e) {
+            // If the database doesn't support IF NOT EXISTS, try a different approach
+            try {
+                // Check if column exists
+                $query = "SHOW COLUMNS FROM forum_threads LIKE 'view_count'";
+                $result = $this->db->fetchAll($query);
+                
+                if (empty($result)) {
+                    // Column doesn't exist, add it
+                    $query = "ALTER TABLE forum_threads ADD COLUMN view_count INT UNSIGNED NOT NULL DEFAULT 0";
+                    $this->db->query($query);
+                }
+            } catch (Exception $e2) {
+                // Log error
+                error_log("Error ensuring view_count column exists: " . $e2->getMessage());
+                throw $e2;
+            }
+        }
     }
     
     /**
@@ -362,5 +399,153 @@ class ForumThread {
         $result = $this->db->fetchRow($searchQuery, ['%' . $query . '%']);
         
         return $result['count'];
+    }
+    
+    /**
+     * Subscribe a user to a thread
+     * 
+     * @param int $userId User ID
+     * @param int $threadId Thread ID
+     * @return bool Success status
+     */
+    public function subscribeUser($userId, $threadId) {
+        try {
+            // Check if table exists
+            $this->createSubscriptionsTableIfNotExists();
+            
+            // Check if already subscribed
+            $checkQuery = "SELECT 1 FROM forum_subscriptions 
+                          WHERE user_id = ? AND thread_id = ? 
+                          LIMIT 1";
+            
+            $exists = $this->db->fetchRow($checkQuery, [$userId, $threadId]);
+            
+            if ($exists) {
+                return true; // Already subscribed
+            }
+            
+            // Insert new subscription
+            $query = "INSERT INTO forum_subscriptions (user_id, thread_id, created_at) 
+                     VALUES (?, ?, NOW())";
+            
+            $stmt = $this->db->query($query, [$userId, $threadId]);
+            
+            if ($stmt) {
+                $stmt->close();
+                return true;
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            // Log error
+            error_log("Error in subscribeUser: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Create forum_subscriptions table if it doesn't exist
+     */
+    private function createSubscriptionsTableIfNotExists() {
+        $sql = "
+        CREATE TABLE IF NOT EXISTS `forum_subscriptions` (
+          `subscription_id` int(11) NOT NULL AUTO_INCREMENT,
+          `user_id` INT UNSIGNED NOT NULL,
+          `thread_id` INT UNSIGNED NOT NULL,
+          `created_at` datetime NOT NULL,
+          PRIMARY KEY (`subscription_id`),
+          UNIQUE KEY `user_thread_unique` (`user_id`, `thread_id`),
+          KEY `user_id` (`user_id`),
+          KEY `thread_id` (`thread_id`),
+          CONSTRAINT `forum_subscriptions_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+          CONSTRAINT `forum_subscriptions_ibfk_2` FOREIGN KEY (`thread_id`) REFERENCES `forum_threads` (`thread_id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ";
+        
+        $this->db->query($sql);
+    }
+    
+    /**
+     * Unsubscribe a user from a thread
+     * 
+     * @param int $userId User ID
+     * @param int $threadId Thread ID
+     * @return bool Success status
+     */
+    public function unsubscribeUser($userId, $threadId) {
+        try {
+            // Check if table exists
+            $this->createSubscriptionsTableIfNotExists();
+            
+            $query = "DELETE FROM forum_subscriptions 
+                     WHERE user_id = ? AND thread_id = ?";
+            
+            $stmt = $this->db->query($query, [$userId, $threadId]);
+            
+            if ($stmt) {
+                $stmt->close();
+                return true;
+            }
+            
+            return false;
+        } catch (Exception $e) {
+            // Log error
+            error_log("Error in unsubscribeUser: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Check if a user is subscribed to a thread
+     * 
+     * @param int $userId User ID
+     * @param int $threadId Thread ID
+     * @return bool Is subscribed
+     */
+    public function isUserSubscribed($userId, $threadId) {
+        try {
+            // Check if table exists
+            $this->createSubscriptionsTableIfNotExists();
+            
+            $query = "SELECT 1 FROM forum_subscriptions 
+                     WHERE user_id = ? AND thread_id = ? 
+                     LIMIT 1";
+            
+            $result = $this->db->fetchRow($query, [$userId, $threadId]);
+            
+            return !empty($result);
+        } catch (Exception $e) {
+            // Log error
+            error_log("Error in isUserSubscribed: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get all subscriptions for a user
+     * 
+     * @param int $userId User ID
+     * @return array Subscriptions
+     */
+    public function getUserSubscriptions($userId) {
+        try {
+            // Check if table exists
+            $this->createSubscriptionsTableIfNotExists();
+            
+            $query = "SELECT s.*, t.title as thread_title, t.slug as thread_slug, 
+                            t.last_post_at as last_activity, 
+                            sf.name as subforum_name, sf.slug as subforum_slug
+                     FROM forum_subscriptions s
+                     JOIN forum_threads t ON s.thread_id = t.thread_id
+                     JOIN forum_subforums sf ON t.subforum_id = sf.subforum_id
+                     WHERE s.user_id = ?
+                     ORDER BY t.last_post_at DESC";
+            
+            return $this->db->fetchAll($query, [$userId]);
+        } catch (Exception $e) {
+            // Log error
+            error_log("Error in getUserSubscriptions: " . $e->getMessage());
+            return [];
+        }
     }
 }

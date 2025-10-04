@@ -35,6 +35,27 @@ $subforum = $subforumModel->getById($thread['subforum_id']);
 // Increment view count
 $threadModel->incrementViewCount($thread['thread_id']);
 
+// Check if user is subscribed
+$isSubscribed = false;
+$auth = new Auth();
+if ($auth->isLoggedIn()) {
+    $userId = $auth->getUserId();
+    $isSubscribed = $threadModel->isUserSubscribed($userId, $thread['thread_id']);
+    
+    // Handle subscription actions
+    if (isset($_POST['subscribe'])) {
+        $threadModel->subscribeUser($userId, $thread['thread_id']);
+        setFlashMessage('success', 'You have subscribed to this thread.');
+        redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+    }
+    
+    if (isset($_POST['unsubscribe'])) {
+        $threadModel->unsubscribeUser($userId, $thread['thread_id']);
+        setFlashMessage('success', 'You have unsubscribed from this thread.');
+        redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+    }
+}
+
 // Pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $perPage = 10;
@@ -112,11 +133,29 @@ include_once __DIR__ . '/includes/header.php';
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1><?php echo $thread['title']; ?></h1>
         
-        <?php if (isLoggedIn() && !$thread['is_locked']): ?>
-            <a href="#reply-form" class="btn btn-primary">
-                <i class="fas fa-reply me-1"></i> Reply
-            </a>
-        <?php endif; ?>
+        <div>
+            <?php if ($auth->isLoggedIn()): ?>
+                <?php if ($isSubscribed): ?>
+                    <form method="post" class="d-inline me-2">
+                        <button type="submit" name="unsubscribe" class="btn btn-outline-secondary">
+                            <i class="fas fa-bell-slash"></i> Unsubscribe
+                        </button>
+                    </form>
+                <?php else: ?>
+                    <form method="post" class="d-inline me-2">
+                        <button type="submit" name="subscribe" class="btn btn-outline-primary">
+                            <i class="fas fa-bell"></i> Subscribe
+                        </button>
+                    </form>
+                <?php endif; ?>
+            <?php endif; ?>
+            
+            <?php if (isLoggedIn() && !$thread['is_locked']): ?>
+                <a href="#reply-form" class="btn btn-primary">
+                    <i class="fas fa-reply me-1"></i> Reply
+                </a>
+            <?php endif; ?>
+        </div>
     </div>
     
     <?php if ($thread['is_locked']): ?>

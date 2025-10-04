@@ -110,10 +110,10 @@ class Auth {
                 $token = bin2hex(random_bytes(32));
                 $expires = time() + (86400 * 30); // 30 days
                 
-                setcookie('remember_token', $token, $expires, '/', '', true, true);
+                setcookie('remember_user', $user['user_id'], $expires, '/', '', true, true);
                 
-                // Store token in database
-                $this->db->update('users', ['remember_token' => $token], 'user_id = ?', [$user['user_id']]);
+                // Note: remember_token column doesn't exist in the database
+                // Using session-based authentication instead
             }
             
             return true;
@@ -147,6 +147,15 @@ class Auth {
      */
     public function isLoggedIn() {
         return isset($_SESSION['user_id']);
+    }
+    
+    /**
+     * Get current user ID
+     * 
+     * @return int|null User ID or null if not logged in
+     */
+    public function getUserId() {
+        return isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
     }
     
     /**

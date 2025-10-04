@@ -80,6 +80,50 @@ function isSuperAdmin() {
 }
 
 /**
+ * Check if user has a specific permission
+ * 
+ * @param string $permission Permission to check
+ * @return bool
+ */
+function hasPermission($permission) {
+    // For now, we'll implement a simple permission system
+    // Super admins have all permissions
+    if (isSuperAdmin()) {
+        return true;
+    }
+    
+    // Admins have most permissions
+    if (isAdmin()) {
+        // List of permissions that admins have
+        $adminPermissions = [
+            'create_blog_posts',
+            'edit_blog_posts',
+            'delete_blog_posts',
+            'manage_users',
+            'manage_forums',
+            'manage_comments'
+        ];
+        
+        return in_array($permission, $adminPermissions);
+    }
+    
+    // Regular users have limited permissions
+    if (isLoggedIn()) {
+        // List of permissions that regular users have
+        $userPermissions = [
+            'create_forum_posts',
+            'edit_own_posts',
+            'delete_own_posts'
+        ];
+        
+        return in_array($permission, $userPermissions);
+    }
+    
+    // Not logged in users have no permissions
+    return false;
+}
+
+/**
  * Generate CSRF token
  * 
  * @return string

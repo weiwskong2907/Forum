@@ -71,50 +71,26 @@ $totalUsers = $userModel->getTotalCount();
 $totalPages = ceil($totalUsers / $limit);
 
 $pageTitle = 'User Management';
-include '../includes/header.php';
+include __DIR__ . '/includes/admin_header.php';
 ?>
 
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-3">
-            <!-- Admin Sidebar -->
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Admin Dashboard</h5>
-                </div>
-                <div class="list-group list-group-flush">
-                    <a href="index.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
-                    </a>
-                    <a href="users.php" class="list-group-item list-group-item-action active">
-                        <i class="fas fa-users mr-2"></i> User Management
-                    </a>
-                    <a href="content.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-file-alt mr-2"></i> Content Moderation
-                    </a>
-                    <a href="forum.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-comments mr-2"></i> Forum Management
-                    </a>
-                    <a href="system_health_check.php" class="list-group-item list-group-item-action">
-                        <i class="fas fa-heartbeat mr-2"></i> System Health
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-9">
+        <main class="col-12 px-md-4 py-4">
             <!-- User Management -->
-            <div class="card mb-4">
+            <div class="card mb-4 shadow-sm border">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">User Management</h5>
-                    <span class="badge badge-light"><?php echo $totalUsers; ?> Users</span>
+                    <h5 class="mb-0 d-flex align-items-center">
+                        <i class="bi bi-people-fill me-2"></i> User Management
+                    </h5>
+                    <span class="badge bg-light text-dark rounded-pill px-3 py-2"><?php echo $totalUsers; ?> Users</span>
                 </div>
                 <div class="card-body">
                     <?php displayFlashMessages(); ?>
                     
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
-                            <thead>
+                            <thead class="table-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Username</th>
@@ -138,39 +114,39 @@ include '../includes/header.php';
                                     <td><?php echo htmlspecialchars($user['email']); ?></td>
                                     <td>
                                         <?php if ($user['role'] == 'admin'): ?>
-                                            <span class="badge badge-danger">Admin</span>
+                                            <span class="badge bg-danger">Admin</span>
                                         <?php elseif ($user['role'] == 'moderator'): ?>
-                                            <span class="badge badge-warning">Moderator</span>
+                                            <span class="badge bg-warning text-dark">Moderator</span>
                                         <?php else: ?>
-                                            <span class="badge badge-secondary">User</span>
+                                            <span class="badge bg-secondary">User</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php if ($user['is_active']): ?>
-                                            <span class="badge badge-success">Active</span>
+                                            <span class="badge bg-success">Active</span>
                                         <?php else: ?>
-                                            <span class="badge badge-danger">Banned</span>
+                                            <span class="badge bg-danger">Banned</span>
                                         <?php endif; ?>
                                     </td>
                                     <td><?php echo date('M j, Y', strtotime($user['created_at'])); ?></td>
                                     <td>
-                                        <span class="badge badge-info"><?php echo $user['post_count']; ?> Posts</span>
-                                        <span class="badge badge-primary"><?php echo $user['thread_count']; ?> Threads</span>
+                                        <span class="badge bg-info text-white me-1"><?php echo $user['post_count']; ?> Posts</span>
+                                        <span class="badge bg-primary"><?php echo $user['thread_count']; ?> Threads</span>
                                     </td>
                                     <td>
                                         <div class="dropdown">
-                                            <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                Actions
+                                            <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <i class="bi bi-gear-fill me-1"></i> Actions
                                             </button>
-                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            <div class="dropdown-menu shadow" aria-labelledby="dropdownMenuButton">
                                                 <!-- Status Actions -->
                                                 <?php if ($user['is_active']): ?>
                                                     <a class="dropdown-item text-danger" href="users.php?action=ban&id=<?php echo $user['user_id']; ?>" onclick="return confirm('Are you sure you want to ban this user?')">
-                                                        <i class="fas fa-ban mr-2"></i> Ban User
+                                                        <i class="bi bi-slash-circle me-2"></i> Ban User
                                                     </a>
                                                 <?php else: ?>
                                                     <a class="dropdown-item text-success" href="users.php?action=unban&id=<?php echo $user['user_id']; ?>">
-                                                        <i class="fas fa-check mr-2"></i> Unban User
+                                                        <i class="bi bi-check-circle me-2"></i> Unban User
                                                     </a>
                                                 <?php endif; ?>
                                                 
@@ -179,19 +155,19 @@ include '../includes/header.php';
                                                 <!-- Role Actions -->
                                                 <?php if ($user['role'] != 'admin'): ?>
                                                     <a class="dropdown-item" href="users.php?action=make_admin&id=<?php echo $user['user_id']; ?>" onclick="return confirm('Are you sure you want to make this user an admin?')">
-                                                        <i class="fas fa-user-shield mr-2"></i> Make Admin
+                                                        <i class="bi bi-shield-fill me-2"></i> Make Admin
                                                     </a>
                                                 <?php endif; ?>
                                                 
                                                 <?php if ($user['role'] != 'moderator'): ?>
                                                     <a class="dropdown-item" href="users.php?action=make_moderator&id=<?php echo $user['user_id']; ?>">
-                                                        <i class="fas fa-user-cog mr-2"></i> Make Moderator
+                                                        <i class="bi bi-person-gear me-2"></i> Make Moderator
                                                     </a>
                                                 <?php endif; ?>
                                                 
                                                 <?php if ($user['role'] != 'user'): ?>
                                                     <a class="dropdown-item" href="users.php?action=make_user&id=<?php echo $user['user_id']; ?>">
-                                                        <i class="fas fa-user mr-2"></i> Make Regular User
+                                                        <i class="bi bi-person me-2"></i> Make Regular User
                                                     </a>
                                                 <?php endif; ?>
                                             </div>
@@ -205,35 +181,41 @@ include '../includes/header.php';
                     
                     <!-- Pagination -->
                     <?php if ($totalPages > 1): ?>
-                    <nav aria-label="User pagination">
-                        <ul class="pagination justify-content-center">
-                            <?php if ($page > 1): ?>
+                    <div class="card-footer bg-light">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm justify-content-center mb-0">
+                                <?php if ($page > 1): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="users.php?page=<?php echo $page - 1; ?>">Previous</a>
+                                    <a class="page-link" href="users.php?page=<?php echo $page - 1; ?>" aria-label="Previous">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </a>
                                 </li>
-                            <?php else: ?>
+                                <?php else: ?>
                                 <li class="page-item disabled">
-                                    <span class="page-link">Previous</span>
+                                    <span class="page-link"><i class="bi bi-chevron-left"></i></span>
                                 </li>
-                            <?php endif; ?>
-                            
-                            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                                <li class="page-item <?php echo $i == $page ? 'active' : ''; ?>">
+                                <?php endif; ?>
+                                
+                                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                                <li class="page-item <?php echo ($i == $page) ? 'active' : ''; ?>">
                                     <a class="page-link" href="users.php?page=<?php echo $i; ?>"><?php echo $i; ?></a>
                                 </li>
-                            <?php endfor; ?>
-                            
-                            <?php if ($page < $totalPages): ?>
+                                <?php endfor; ?>
+                                
+                                <?php if ($page < $totalPages): ?>
                                 <li class="page-item">
-                                    <a class="page-link" href="users.php?page=<?php echo $page + 1; ?>">Next</a>
+                                    <a class="page-link" href="users.php?page=<?php echo $page + 1; ?>" aria-label="Next">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
                                 </li>
-                            <?php else: ?>
+                                <?php else: ?>
                                 <li class="page-item disabled">
-                                    <span class="page-link">Next</span>
+                                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>
                                 </li>
-                            <?php endif; ?>
-                        </ul>
-                    </nav>
+                                <?php endif; ?>
+                            </ul>
+                        </nav>
+                    </div>
                     <?php endif; ?>
                 </div>
             </div>
@@ -241,4 +223,4 @@ include '../includes/header.php';
     </div>
 </div>
 
-<?php include '../includes/footer.php'; ?>
+<?php include __DIR__ . '/includes/admin_footer.php'; ?>

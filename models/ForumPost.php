@@ -53,13 +53,36 @@ class ForumPost {
      * Count posts by thread ID
      * 
      * @param int $threadId Thread ID
-     * @return int Count
+     * @return int Post count
      */
     public function countByThreadId($threadId) {
-        $query = "SELECT COUNT(*) as count FROM forum_posts WHERE thread_id = ?";
-        $result = $this->db->fetchRow($query, [$threadId]);
+        $query = "SELECT COUNT(*) as count 
+                 FROM forum_posts 
+                 WHERE thread_id = ?";
         
-        return $result['count'];
+        $result = $this->db->fetchRow($query, [$threadId]);
+        return $result['count'] ?? 0;
+    }
+    
+    /**
+     * Search forum posts
+     * 
+     * @param string $query Search query
+     * @param int $limit Result limit
+     * @return array Search results
+     */
+    public function search($query, $limit = 10) {
+        $searchTerm = '%' . $query . '%';
+        
+        $sql = "SELECT p.*, u.username, t.title as thread_title, t.slug as thread_slug
+                FROM forum_posts p
+                JOIN users u ON p.user_id = u.user_id
+                JOIN forum_threads t ON p.thread_id = t.thread_id
+                WHERE p.content LIKE ?
+                ORDER BY p.created_at DESC
+                LIMIT ?";
+        
+        return $this->db->fetchAll($sql, [$searchTerm, $limit]);
     }
     
     /**

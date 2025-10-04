@@ -38,9 +38,10 @@ class BlogComment {
      * @return array Comments
      */
     public function getByPostId($postId, $approvedOnly = true) {
-        $query = "SELECT c.*, u.username, u.avatar 
+        $query = "SELECT c.*, u.username, p.avatar 
                  FROM blog_comments c 
                  JOIN users u ON c.user_id = u.user_id 
+                 LEFT JOIN user_profiles p ON u.user_id = p.user_id
                  WHERE c.post_id = ?";
         
         if ($approvedOnly) {

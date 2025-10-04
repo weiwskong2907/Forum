@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     content TEXT NOT NULL,
     excerpt TEXT DEFAULT NULL,
     status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+    featured_image VARCHAR(255) DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     published_at TIMESTAMP NULL,

@@ -25,7 +25,7 @@ class BlogPost {
                  FROM blog_posts p 
                  JOIN blog_categories c ON p.category_id = c.category_id 
                  JOIN users u ON p.user_id = u.user_id 
-                 WHERE p.post_id = ? AND p.status = 'published' 
+                 WHERE p.post_id = ? 
                  LIMIT 1";
         
         return $this->db->fetchRow($query, [$postId]);
@@ -57,12 +57,14 @@ class BlogPost {
      * @param string $order Order direction
      * @return array Posts
      */
-    public function getAll($limit = 10, $offset = 0, $orderBy = 'published_at', $order = 'DESC') {
+    public function getAll($limit = 10, $offset = 0, $orderBy = 'published_at', $order = 'DESC', $includeAll = false) {
+        $whereClause = $includeAll ? "" : "WHERE p.status = 'published'";
+        
         $query = "SELECT p.*, c.name as category_name, u.username 
                  FROM blog_posts p 
                  JOIN blog_categories c ON p.category_id = c.category_id 
                  JOIN users u ON p.user_id = u.user_id 
-                 WHERE p.status = 'published' 
+                 {$whereClause} 
                  ORDER BY p.{$orderBy} {$order} 
                  LIMIT ?, ?";
         
@@ -99,6 +101,48 @@ class BlogPost {
         $result = $this->db->fetchRow($query);
         return $result ? (int)$result['count'] : 0;
     }
+        
+    /**
+     * Update featured image for a blog post
+     * 
+     * @param int $postId Post ID
+     * @param string $featuredImage Featured image path
+     * @return bool Success or failure
+     */
+    public function updateFeaturedImage($postId, $featuredImage) {
+        $query = "UPDATE blog_posts SET featured_image = ? WHERE post_id = ?";
+        $stmt = $this->db->query($query, [$featuredImage, $postId]);
+        $result = $stmt->affected_rows > 0;
+        $stmt->close();
+        return $result;
+    }
+    
+    /**
+     * Check if a slug already exists
+     * 
+     * @param string $slug Slug to check
+     * @return bool True if exists, false otherwise
+     */
+    public function slugExists($slug) {
+        $query = "SELECT COUNT(*) as count FROM blog_posts WHERE slug = ?";
+        $result = $this->db->fetchRow($query, [$slug]);
+        return $result && (int)$result['count'] > 0;
+    }
+    
+    /**
+     * Check if a slug already exists (excluding a specific post)
+     * 
+     * @param string $slug Slug to check
+     * @param int $postId Post ID to exclude
+     * @return bool True if exists, false otherwise
+     */
+    public function slugExistsExcept($slug, $postId) {
+        $query = "SELECT COUNT(*) as count FROM blog_posts WHERE slug = ? AND post_id != ?";
+        $result = $this->db->fetchRow($query, [$slug, $postId]);
+        return $result && (int)$result['count'] > 0;
+    }
+    
+
     
     /**
      * Get blog posts by category
