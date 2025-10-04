@@ -255,6 +255,20 @@ class ForumThread {
     }
     
     /**
+     * Move thread to another subforum
+     * 
+     * @param int $threadId Thread ID
+     * @param int $newSubforumId New subforum ID
+     * @return bool Success or failure
+     */
+    public function moveThread($threadId, $newSubforumId) {
+        $query = "UPDATE forum_threads SET subforum_id = ? WHERE thread_id = ?";
+        $stmt = $this->db->query($query, [$newSubforumId, $threadId]);
+        
+        return $stmt->affected_rows > 0;
+    }
+    
+    /**
      * Increment view count
      * 
      * @param int $threadId Thread ID
@@ -265,6 +279,53 @@ class ForumThread {
         $stmt = $this->db->query($query, [$threadId]);
         
         return $stmt->affected_rows > 0;
+    }
+    
+    /**
+     * Get recent threads
+     * 
+     * @param int $limit Limit
+     * @return array Threads
+     */
+    public function getRecent($limit = 5) {
+        $query = "SELECT t.*, s.name as subforum_name, u.username 
+                 FROM forum_threads t 
+                 JOIN forum_subforums s ON t.subforum_id = s.subforum_id 
+                 JOIN users u ON t.user_id = u.user_id 
+                 ORDER BY t.created_at DESC 
+                 LIMIT ?";
+        
+        return $this->db->fetchAll($query, [$limit]);
+    }
+    
+    /**
+     * Get total count of threads
+     * 
+     * @return int Count
+     */
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM forum_threads";
+        $result = $this->db->fetchRow($query);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
+     * Get all threads with pagination
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array Threads
+     */
+    public function getAll($limit = 20, $offset = 0) {
+        $query = "SELECT t.*, s.name as subforum_name, u.username, 
+                 (SELECT COUNT(*) FROM forum_posts WHERE thread_id = t.thread_id) as post_count
+                 FROM forum_threads t 
+                 JOIN forum_subforums s ON t.subforum_id = s.subforum_id 
+                 JOIN users u ON t.user_id = u.user_id 
+                 ORDER BY t.created_at DESC 
+                 LIMIT ?, ?";
+        
+        return $this->db->fetchAll($query, [$offset, $limit]);
     }
     
     /**

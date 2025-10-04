@@ -63,6 +63,68 @@ class ForumPost {
     }
     
     /**
+     * Get total post count for a thread
+     * 
+     * @param int $threadId Thread ID
+     * @return int Post count
+     */
+    public function getCountByThreadId($threadId) {
+        $query = "SELECT COUNT(*) as count 
+                 FROM forum_posts 
+                 WHERE thread_id = ?";
+        
+        $result = $this->db->fetchRow($query, [$threadId]);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
+     * Get posts by user ID
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of posts to return
+     * @return array Posts with thread information
+     */
+    public function getPostsByUser($userId, $limit = 5) {
+        $query = "SELECT p.*, t.title as thread_title, t.slug as thread_slug 
+                 FROM forum_posts p 
+                 JOIN forum_threads t ON p.thread_id = t.thread_id 
+                 WHERE p.user_id = ? 
+                 ORDER BY p.created_at DESC 
+                 LIMIT ?";
+        
+        return $this->db->fetchAll($query, [$userId, $limit]);
+    }
+    
+    /**
+     * Get all forum posts with pagination
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array Posts
+     */
+    public function getAll($limit = 20, $offset = 0) {
+        $query = "SELECT p.*, t.title as thread_title, t.slug as thread_slug, u.username 
+                 FROM forum_posts p 
+                 JOIN forum_threads t ON p.thread_id = t.thread_id 
+                 JOIN users u ON p.user_id = u.user_id 
+                 ORDER BY p.created_at DESC 
+                 LIMIT ?, ?";
+        
+        return $this->db->fetchAll($query, [$offset, $limit]);
+    }
+    
+    /**
+     * Get total count of forum posts
+     * 
+     * @return int Count
+     */
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM forum_posts";
+        $result = $this->db->fetchRow($query);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
      * Create a new post
      * 
      * @param array $data Post data

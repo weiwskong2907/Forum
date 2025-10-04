@@ -1,4 +1,74 @@
 /* Custom CSS */
+
+/* Activity Timeline Styles */
+.timeline {
+    position: relative;
+    padding: 20px 0;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 25px;
+    padding-left: 60px;
+}
+
+.timeline-icon {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    border: 2px solid #dee2e6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.timeline-icon i {
+    font-size: 18px;
+}
+
+.timeline-icon i.fa-file-alt {
+    color: #28a745;
+}
+
+.timeline-icon i.fa-comments {
+    color: #007bff;
+}
+
+.timeline-icon i.fa-comment {
+    color: #17a2b8;
+}
+
+.timeline-icon i.fa-reply {
+    color: #ffc107;
+}
+
+.timeline-content {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    position: relative;
+}
+
+.timeline-content h5 {
+    margin-top: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.timeline-content p {
+    margin-bottom: 5px;
+}
+
+.timeline-date {
+    display: block;
+    font-size: 12px;
+    color: #6c757d;
+}
 body {
     padding-top: 56px;
     min-height: 100vh;

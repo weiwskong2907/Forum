@@ -39,7 +39,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link <?php echo $currentPage === 'index.php' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>">Home</a>
+                        <a class="nav-link <?php echo $currentPage === 'index.php' ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>/index.php">Home</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link <?php echo $currentPage === 'blog.php' || strpos($currentPage, 'blog_') === 0 ? 'active' : ''; ?>" href="<?php echo BASE_URL; ?>/blog.php">Blog</a>

@@ -154,12 +154,132 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
 }
 
 // Get user's blog posts
-$blogModel = new BlogPost();
-$userPosts = $blogModel->getByUser($userId, 5);
+$blogPostModel = new BlogPost();
+$userPosts = $blogPostModel->getByUser($userId, 5);
 
 // Get user's forum threads
-$threadModel = new ForumThread();
-$userThreads = $threadModel->getByUser($userId, 5);
+$forumThreadModel = new ForumThread();
+$userThreads = $forumThreadModel->getByUser($userId, 5);
+
+// Get user's blog comments
+$blogCommentModel = new BlogComment();
+$userBlogComments = $blogCommentModel->getCommentsByUser($userId, 5);
+
+// Get user's forum replies
+$forumPostModel = new ForumPost();
+$userForumReplies = $forumPostModel->getPostsByUser($userId, 5);
+
+// Create unified activity timeline
+$activityTimeline = [];
+
+// Add blog posts to timeline
+foreach ($userPosts as $post) {
+    $activityTimeline[] = [
+        'type' => 'blog_post',
+        'title' => $post['title'],
+        'url' => 'blog-post.php?slug=' . $post['slug'],
+        'date' => $post['created_at'],
+        'context' => 'Published a blog post'
+    ];
+}
+
+// Add forum threads to timeline
+foreach ($userThreads as $thread) {
+    $activityTimeline[] = [
+        'type' => 'forum_thread',
+        'title' => $thread['title'],
+        'url' => 'forum-thread.php?slug=' . $thread['slug'],
+        'date' => $thread['created_at'],
+        'context' => 'Started a forum thread'
+    ];
+}
+
+// Add blog comments to timeline
+foreach ($userBlogComments as $comment) {
+    $activityTimeline[] = [
+        'type' => 'blog_comment',
+        'title' => $comment['post_title'],
+        'url' => 'blog-post.php?slug=' . $comment['post_slug'] . '#comment-' . $comment['comment_id'],
+        'date' => $comment['created_at'],
+        'context' => 'Commented on a blog post'
+    ];
+}
+
+// Add forum replies to timeline
+foreach ($userForumReplies as $reply) {
+    $activityTimeline[] = [
+        'type' => 'forum_reply',
+        'title' => $reply['thread_title'],
+        'url' => 'forum-thread.php?slug=' . $reply['thread_slug'] . '#post-' . $reply['post_id'],
+        'date' => $reply['created_at'],
+        'context' => 'Replied to a forum thread'
+    ];
+}
+
+// Sort timeline by date (newest first)
+usort($activityTimeline, function($a, $b) {
+    return strtotime($b['date']) - strtotime($a['date']);
+});
+
+// Get user's blog comments
+$commentModel = new BlogComment();
+$userComments = $commentModel->getCommentsByUser($userId, 5);
+
+// Get user's forum posts (replies)
+$forumPostModel = new ForumPost();
+$userForumPosts = $forumPostModel->getPostsByUser($userId, 5);
+
+// Create unified activity timeline
+$unifiedActivity = [];
+
+// Add blog posts to timeline
+foreach ($userPosts as $post) {
+    $unifiedActivity[] = [
+        'type' => 'blog_post',
+        'title' => $post['title'],
+        'url' => 'blog_post.php?slug=' . $post['slug'],
+        'date' => $post['published_at'],
+        'context' => 'Posted in ' . $post['category_name']
+    ];
+}
+
+// Add forum threads to timeline
+foreach ($userThreads as $thread) {
+    $unifiedActivity[] = [
+        'type' => 'forum_thread',
+        'title' => $thread['title'],
+        'url' => 'forum_thread.php?slug=' . $thread['slug'],
+        'date' => $thread['created_at'],
+        'context' => 'Started thread in ' . $thread['subforum_name']
+    ];
+}
+
+// Add blog comments to timeline
+foreach ($userComments as $comment) {
+    $unifiedActivity[] = [
+        'type' => 'blog_comment',
+        'title' => 'Comment on "' . $comment['post_title'] . '"',
+        'url' => 'blog_post.php?slug=' . $comment['post_slug'] . '#comment-' . $comment['comment_id'],
+        'date' => $comment['created_at'],
+        'context' => 'Commented on blog post'
+    ];
+}
+
+// Add forum posts to timeline
+foreach ($userForumPosts as $post) {
+    $unifiedActivity[] = [
+        'type' => 'forum_post',
+        'title' => 'Reply to "' . $post['thread_title'] . '"',
+        'url' => 'forum_thread.php?slug=' . $post['thread_slug'] . '#post-' . $post['post_id'],
+        'date' => $post['created_at'],
+        'context' => 'Replied in forum thread'
+    ];
+}
+
+// Sort unified activity by date (newest first)
+usort($unifiedActivity, function($a, $b) {
+    return strtotime($b['date']) - strtotime($a['date']);
+});
 
 // Page title
 $pageTitle = 'My Profile';
@@ -299,59 +419,104 @@ include_once __DIR__ . '/includes/header.php';
                 <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
                     <div class="card mb-4">
                         <div class="card-header">
-                            <h3 class="h5 mb-0">My Blog Posts</h3>
+                            <h3 class="h5 mb-0">Activity Timeline</h3>
                         </div>
                         <div class="card-body">
-                            <?php if (!empty($userPosts)): ?>
-                                <ul class="list-group list-group-flush">
-                                    <?php foreach ($userPosts as $post): ?>
-                                        <li class="list-group-item">
-                                            <a href="<?php echo BASE_URL; ?>/blog_post.php?slug=<?php echo $post['slug']; ?>" class="text-decoration-none">
-                                                <?php echo $post['title']; ?>
-                                            </a>
-                                            <div class="small text-muted mt-1">
-                                                <i class="fas fa-calendar me-1"></i> <?php echo formatDate($post['published_at']); ?>
-                                                <i class="fas fa-folder ms-2 me-1"></i> <?php echo $post['category_name']; ?>
+                            <?php if (!empty($activityTimeline)): ?>
+                                <div class="timeline">
+                                    <?php foreach ($activityTimeline as $activity): ?>
+                                        <div class="timeline-item mb-4">
+                                            <div class="d-flex">
+                                                <div class="timeline-icon me-3">
+                                                    <?php if ($activity['type'] === 'blog_post'): ?>
+                                                        <i class="fas fa-file-alt text-primary"></i>
+                                                    <?php elseif ($activity['type'] === 'forum_thread'): ?>
+                                                        <i class="fas fa-comments text-success"></i>
+                                                    <?php elseif ($activity['type'] === 'blog_comment'): ?>
+                                                        <i class="fas fa-comment text-info"></i>
+                                                    <?php elseif ($activity['type'] === 'forum_reply'): ?>
+                                                        <i class="fas fa-reply text-warning"></i>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="timeline-content">
+                                                    <h5 class="mb-1">
+                                                        <a href="<?php echo $activity['url']; ?>" class="text-decoration-none">
+                                                            <?php echo $activity['title']; ?>
+                                                        </a>
+                                                    </h5>
+                                                    <div class="text-muted small mb-2">
+                                                        <?php echo $activity['context']; ?> • <?php echo formatDate($activity['date']); ?>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </li>
+                                        </div>
                                     <?php endforeach; ?>
-                                </ul>
-                                
-                                <div class="mt-3">
-                                    <a href="<?php echo BASE_URL; ?>/blog.php?author=<?php echo $userId; ?>" class="btn btn-sm btn-outline-primary">View All My Posts</a>
                                 </div>
                             <?php else: ?>
-                                <div class="alert alert-info mb-0">You haven't created any blog posts yet.</div>
+                                <div class="alert alert-info mb-0">No activity found.</div>
                             <?php endif; ?>
                         </div>
                     </div>
                     
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="h5 mb-0">My Forum Threads</h3>
-                        </div>
-                        <div class="card-body">
-                            <?php if (!empty($userThreads)): ?>
-                                <ul class="list-group list-group-flush">
-                                    <?php foreach ($userThreads as $thread): ?>
-                                        <li class="list-group-item">
-                                            <a href="<?php echo BASE_URL; ?>/forum_thread.php?slug=<?php echo $thread['slug']; ?>" class="text-decoration-none">
-                                                <?php echo $thread['title']; ?>
-                                            </a>
-                                            <div class="small text-muted mt-1">
-                                                <i class="fas fa-calendar me-1"></i> <?php echo formatDate($thread['created_at']); ?>
-                                                <i class="fas fa-comments ms-2 me-1"></i> <?php echo $thread['subforum_name']; ?>
-                                            </div>
-                                        </li>
-                                    <?php endforeach; ?>
-                                </ul>
-                                
-                                <div class="mt-3">
-                                    <a href="<?php echo BASE_URL; ?>/forum.php?author=<?php echo $userId; ?>" class="btn btn-sm btn-outline-primary">View All My Threads</a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h3 class="h5 mb-0">My Blog Posts</h3>
                                 </div>
-                            <?php else: ?>
-                                <div class="alert alert-info mb-0">You haven't created any forum threads yet.</div>
-                            <?php endif; ?>
+                                <div class="card-body">
+                                    <?php if (!empty($userPosts)): ?>
+                                        <ul class="list-group list-group-flush">
+                                            <?php foreach ($userPosts as $post): ?>
+                                                <li class="list-group-item">
+                                                    <a href="blog-post.php?slug=<?php echo $post['slug']; ?>" class="text-decoration-none">
+                                                        <?php echo $post['title']; ?>
+                                                    </a>
+                                                    <div class="small text-muted mt-1">
+                                                        <i class="fas fa-calendar me-1"></i> <?php echo formatDate($post['published_at']); ?>
+                                                    </div>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                        
+                                        <div class="mt-3">
+                                            <a href="blog.php?author=<?php echo $userId; ?>" class="btn btn-sm btn-outline-primary">View All My Posts</a>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="alert alert-info mb-0">You haven't created any blog posts yet.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="h5 mb-0">My Forum Threads</h3>
+                                </div>
+                                <div class="card-body">
+                                    <?php if (!empty($userThreads)): ?>
+                                        <ul class="list-group list-group-flush">
+                                            <?php foreach ($userThreads as $thread): ?>
+                                                <li class="list-group-item">
+                                                    <a href="forum-thread.php?slug=<?php echo $thread['slug']; ?>" class="text-decoration-none">
+                                                        <?php echo $thread['title']; ?>
+                                                    </a>
+                                                    <div class="small text-muted mt-1">
+                                                        <i class="fas fa-calendar me-1"></i> <?php echo formatDate($thread['created_at']); ?>
+                                                    </div>
+                                                </li>
+                                            <?php endforeach; ?>
+                                        </ul>
+                                        
+                                        <div class="mt-3">
+                                            <a href="forum.php?author=<?php echo $userId; ?>" class="btn btn-sm btn-outline-primary">View All My Threads</a>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="alert alert-info mb-0">You haven't created any forum threads yet.</div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

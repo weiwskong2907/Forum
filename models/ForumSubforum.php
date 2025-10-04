@@ -47,6 +47,13 @@ class ForumSubforum {
     }
     
     /**
+     * Get all subforums
+     * 
+     * @return array All subforums
+     */
+
+    
+    /**
      * Get subforums by category ID
      * 
      * @param int $categoryId Category ID

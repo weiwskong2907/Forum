@@ -9,6 +9,7 @@ CREATE DATABASE IF NOT EXISTS forum_blog CHARACTER SET utf8mb4 COLLATE utf8mb4_u
 -- Use the database
 USE forum_blog;
 
+
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
     user_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -21,9 +22,12 @@ CREATE TABLE IF NOT EXISTS users (
     last_login TIMESTAMP NULL,
     is_active BOOLEAN DEFAULT TRUE,
     remember_token VARCHAR(255) DEFAULT NULL,
+    reset_token VARCHAR(255) DEFAULT NULL,
+    reset_token_expires TIMESTAMP NULL,
     INDEX idx_username (username),
     INDEX idx_email (email),
-    INDEX idx_remember_token (remember_token)
+    INDEX idx_remember_token (remember_token),
+    INDEX idx_reset_token (reset_token)
 ) ENGINE=InnoDB;
 
 -- User profiles table

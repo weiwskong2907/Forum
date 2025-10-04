@@ -123,26 +123,64 @@ class User {
      * @param int $offset Offset
      * @return array Users
      */
-    public function getAll($limit = 10, $offset = 0) {
-        $query = "SELECT u.user_id, u.username, u.email, u.role, u.created_at, u.last_login 
-                 FROM users u 
-                 WHERE u.is_active = 1 
-                 ORDER BY u.created_at DESC 
+
+    
+    /**
+     * Get total user count
+     * 
+     * @return int User count
+     */
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM users WHERE is_active = 1";
+        $result = $this->db->fetchRow($query);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
+     * Count all users (alias for getTotalCount)
+     * 
+     * @return int User count
+     */
+    public function countAll() {
+        return $this->getTotalCount();
+    }
+    
+    /**
+     * Get all users with pagination
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array Users
+     */
+    public function getAll($limit = 20, $offset = 0) {
+        $query = "SELECT u.user_id, u.username, u.email, u.role, u.is_active, u.created_at, 
+                        (SELECT COUNT(*) FROM blog_posts WHERE user_id = u.user_id) as post_count,
+                        (SELECT COUNT(*) FROM forum_threads WHERE user_id = u.user_id) as thread_count
+                 FROM users u
+                 ORDER BY u.created_at DESC
                  LIMIT ?, ?";
         
         return $this->db->fetchAll($query, [$offset, $limit]);
     }
     
     /**
-     * Count all users
+     * Ban a user
      * 
-     * @return int Count
+     * @param int $userId User ID
+     * @return bool Success
      */
-    public function countAll() {
-        $query = "SELECT COUNT(*) as count FROM users WHERE is_active = 1";
-        $result = $this->db->fetchRow($query);
-        
-        return $result['count'];
+    public function banUser($userId) {
+        return $this->db->update('users', ['is_active' => 0], 'user_id = ?', [$userId]);
+    }
+    
+    /**
+     * Unban user
+     * 
+     * @param int $userId User ID
+     * @return bool Success
+     */
+    public function unbanUser($userId) {
+        return $this->db->update('users', ['is_active' => 1], 'user_id = ?', [$userId]);
     }
     
     /**
@@ -193,5 +231,67 @@ class User {
                  LIMIT 1";
         
         return $this->db->fetchRow($query);
+    }
+    
+    /**
+     * Save password reset token
+     * 
+     * @param int $userId User ID
+     * @param string $token Reset token
+     * @param string $expires Expiration date
+     * @return bool Success or failure
+     */
+    public function saveResetToken($userId, $token, $expires) {
+        // First, try to add the columns if they don't exist
+        try {
+            $this->db->getConnection()->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255) DEFAULT NULL");
+            $this->db->getConnection()->query("ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP NULL");
+        } catch (Exception $e) {
+            // Ignore errors, we'll try the update anyway
+        }
+        
+        return $this->db->update('users', [
+            'reset_token' => $token,
+            'reset_token_expires' => $expires
+        ], 'user_id = ?', [$userId]);
+    }
+    
+    /**
+     * Get user by reset token
+     * 
+     * @param string $token Reset token
+     * @return array|null User data or null if not found
+     */
+    public function getUserByResetToken($token) {
+        $query = "SELECT user_id, username, email, reset_token_expires 
+                 FROM users 
+                 WHERE reset_token = ? AND is_active = 1 
+                 LIMIT 1";
+        
+        return $this->db->fetchRow($query, [$token]);
+    }
+    
+    /**
+     * Update user password
+     * 
+     * @param int $userId User ID
+     * @param string $hashedPassword Hashed password
+     * @return bool Success or failure
+     */
+    public function updateUserPassword($userId, $hashedPassword) {
+        return $this->db->update('users', ['password' => $hashedPassword], 'user_id = ?', [$userId]);
+    }
+    
+    /**
+     * Clear reset token
+     * 
+     * @param int $userId User ID
+     * @return bool Success or failure
+     */
+    public function clearResetToken($userId) {
+        return $this->db->update('users', [
+            'reset_token' => null,
+            'reset_token_expires' => null
+        ], 'user_id = ?', [$userId]);
     }
 }

@@ -72,6 +72,53 @@ class BlogComment {
     }
     
     /**
+     * Get comments by user ID
+     * 
+     * @param int $userId User ID
+     * @param int $limit Number of comments to return
+     * @return array Comments with post information
+     */
+    public function getCommentsByUser($userId, $limit = 5) {
+        $query = "SELECT c.*, p.title as post_title, p.slug as post_slug 
+                 FROM blog_comments c 
+                 JOIN blog_posts p ON c.post_id = p.post_id 
+                 WHERE c.user_id = ? AND c.is_approved = 1 
+                 ORDER BY c.created_at DESC 
+                 LIMIT ?";
+        
+        return $this->db->fetchAll($query, [$userId, $limit]);
+    }
+    
+    /**
+     * Get all comments with pagination
+     * 
+     * @param int $limit Limit
+     * @param int $offset Offset
+     * @return array Comments
+     */
+    public function getAll($limit = 20, $offset = 0) {
+        $query = "SELECT c.*, p.title as post_title, p.slug as post_slug, u.username 
+                 FROM blog_comments c 
+                 JOIN blog_posts p ON c.post_id = p.post_id 
+                 JOIN users u ON c.user_id = u.user_id 
+                 ORDER BY c.created_at DESC 
+                 LIMIT ?, ?";
+        
+        return $this->db->fetchAll($query, [$offset, $limit]);
+    }
+    
+    /**
+     * Get total count of comments
+     * 
+     * @return int Count
+     */
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM blog_comments";
+        $result = $this->db->fetchRow($query);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
      * Create a new comment
      * 
      * @param array $data Comment data

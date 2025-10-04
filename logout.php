@@ -13,5 +13,5 @@ $auth->logout();
 
 // Redirect to home page
 setFlashMessage('You have been logged out successfully.', 'success');
-redirect(BASE_URL);
+redirect(BASE_URL . '/index.php');
 ?>

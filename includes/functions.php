@@ -225,3 +225,12 @@ function debug($data, $die = true) {
         die();
     }
 }
+
+/**
+ * Display flash messages
+ * 
+ * @return void
+ */
+function displayFlashMessages() {
+    echo flashMessage();
+}

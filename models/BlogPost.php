@@ -80,6 +80,27 @@ class BlogPost {
     }
     
     /**
+     * Get recent blog posts
+     * 
+     * @param int $limit Limit
+     * @return array Posts
+     */
+    public function getRecent($limit = 5) {
+        return $this->getAll($limit);
+    }
+    
+    /**
+     * Get total count of blog posts
+     * 
+     * @return int Count
+     */
+    public function getTotalCount() {
+        $query = "SELECT COUNT(*) as count FROM blog_posts WHERE status = 'published'";
+        $result = $this->db->fetchRow($query);
+        return $result ? (int)$result['count'] : 0;
+    }
+    
+    /**
      * Get blog posts by category
      * 
      * @param int $categoryId Category ID
