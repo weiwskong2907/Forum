@@ -40,7 +40,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         // Handle avatar upload
         $avatar = $user['avatar']; // Keep existing avatar by default
         
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_POST['cropped_image']) && !empty($_POST['cropped_image'])) {
+            // Process base64 encoded image from cropper
+            $croppedImage = $_POST['cropped_image'];
+            
+            // Extract the base64 data
+            list($type, $data) = explode(';', $croppedImage);
+            list(, $data) = explode(',', $data);
+            $data = base64_decode($data);
+            
+            // Get image extension from mime type
+            list(, $extension) = explode('/', $type);
+            $extension = ($extension == 'jpeg') ? 'jpg' : $extension;
+            
+            // Create avatars directory if it doesn't exist
+            $avatarsDir = __DIR__ . '/uploads/avatars';
+            if (!file_exists($avatarsDir)) {
+                mkdir($avatarsDir, 0755, true);
+            }
+            
+            // Generate a unique filename
+            $filename = $userId . '_' . time() . '_cropped.' . $extension;
+            $destination = $avatarsDir . '/' . $filename;
+            
+            // Save the cropped image
+            if (file_put_contents($destination, $data)) {
+                $avatar = 'uploads/avatars/' . $filename;
+                
+                // Delete old avatar if it exists and is not the default
+                if (!empty($user['avatar']) && file_exists(__DIR__ . '/' . $user['avatar']) && strpos($user['avatar'], 'default') === false) {
+                    unlink(__DIR__ . '/' . $user['avatar']);
+                }
+            } else {
+                setFlashMessage('Failed to save cropped avatar.', 'danger');
+            }
+        } elseif (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
             $allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
             $maxSize = 2 * 1024 * 1024; // 2MB
             
@@ -52,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                 setFlashMessage('Avatar must be less than 2MB.', 'danger');
             } else {
                 // Create avatars directory if it doesn't exist
-                $avatarsDir = ROOT_PATH . '/uploads/avatars';
+                $avatarsDir = __DIR__ . '/uploads/avatars';
                 if (!file_exists($avatarsDir)) {
                     mkdir($avatarsDir, 0755, true);
                 }
@@ -65,8 +99,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
                     $avatar = 'uploads/avatars/' . $filename;
                     
                     // Delete old avatar if it exists and is not the default
-                    if (!empty($user['avatar']) && file_exists(ROOT_PATH . '/' . $user['avatar']) && strpos($user['avatar'], 'default') === false) {
-                        unlink(ROOT_PATH . '/' . $user['avatar']);
+                    if (!empty($user['avatar']) && file_exists(__DIR__ . '/' . $user['avatar']) && strpos($user['avatar'], 'default') === false) {
+                        unlink(__DIR__ . '/' . $user['avatar']);
                     }
                 } else {
                     setFlashMessage('Failed to upload avatar. Please try again.', 'danger');
@@ -83,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_profile'])) {
         
         if ($userModel->updateProfile($userId, $profileData)) {
             setFlashMessage('Profile updated successfully.', 'success');
-            redirect(BASE_URL . '/profile.php');
+            redirect('profile.php');
         } else {
             setFlashMessage('Failed to update profile. Please try again.', 'danger');
         }
@@ -112,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_password'])) {
         // Update password
         if ($auth->updatePassword($userId, $currentPassword, $newPassword)) {
             setFlashMessage('Password changed successfully.', 'success');
-            redirect(BASE_URL . '/profile.php');
+            redirect('profile.php');
         } else {
             setFlashMessage('Current password is incorrect.', 'danger');
         }
@@ -142,7 +176,7 @@ include_once __DIR__ . '/includes/header.php';
                     <h2 class="h5 mb-0">Profile Information</h2>
                 </div>
                 <div class="card-body text-center">
-                    <img src="<?php echo !empty($user['avatar']) ? BASE_URL . '/' . $user['avatar'] : 'https://via.placeholder.com/150'; ?>" alt="<?php echo $user['username']; ?>" class="avatar-lg mb-3">
+                    <img src="<?php echo !empty($user['avatar']) ? $user['avatar'] : 'https://via.placeholder.com/150'; ?>" alt="<?php echo $user['username']; ?>" class="avatar-lg mb-3">
                     
                     <h3 class="h4"><?php echo $user['username']; ?></h3>
                     <p class="text-muted">Member since <?php echo formatDate($user['created_at'], 'M j, Y'); ?></p>
@@ -191,10 +225,22 @@ include_once __DIR__ . '/includes/header.php';
                                 <input type="hidden" name="update_profile" value="1">
                                 
                                 <div class="mb-3">
-                                    <label for="avatar" class="form-label">Avatar</label>
-                                    <input type="file" class="form-control" id="avatar" name="avatar">
-                                    <div class="form-text">Max file size: 2MB. Allowed formats: JPEG, PNG, GIF.</div>
+                    <label for="avatar" class="form-label">Avatar</label>
+                    <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*">
+                    <div class="form-text">Max file size: 2MB. Allowed formats: JPEG, PNG, GIF.</div>
+                    <div class="mt-3" id="image-preview-container" style="display: none;">
+                        <div class="card">
+                            <div class="card-header">Crop Image</div>
+                            <div class="card-body">
+                                <div class="img-container mb-3">
+                                    <img id="image-preview" src="" style="max-width: 100%; max-height: 300px;">
                                 </div>
+                                <button type="button" class="btn btn-primary" id="crop-button">Crop and Set Avatar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="cropped_image" id="cropped-image-data">
+                </div>
                                 
                                 <div class="mb-3">
                                     <label for="bio" class="form-label">Bio</label>

@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'danger');
-        redirect(BASE_URL . '/login.php');
+        redirect('login.php');
     }
     
     $username = $_POST['username'] ?? '';
@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Attempt login
         if ($auth->login($username, $password, $remember)) {
             // Redirect to intended page or home
-            $redirect = $_SESSION['redirect_after_login'] ?? BASE_URL;
+            $redirect = $_SESSION['redirect_after_login'] ?? 'index.php';
             unset($_SESSION['redirect_after_login']);
             
             redirect($redirect);
@@ -56,7 +56,7 @@ include_once __DIR__ . '/includes/header.php';
                     <h1 class="h4 mb-0">Login</h1>
                 </div>
                 <div class="card-body">
-                    <form action="<?php echo BASE_URL; ?>/login.php" method="post">
+                    <form action="login.php" method="post" id="loginForm">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         
                         <div class="mb-3">
@@ -75,7 +75,7 @@ include_once __DIR__ . '/includes/header.php';
                         </div>
                         
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Login</button>
+                            <button type="submit" class="btn btn-primary" onclick="document.getElementById('loginForm').submit(); return false;">Login</button>
                         </div>
                     </form>
                 </div>

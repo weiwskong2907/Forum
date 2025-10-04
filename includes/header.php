@@ -21,96 +21,12 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Cropper.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    
     <!-- Custom CSS -->
-    <style>
-        body {
-            padding-top: 56px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        main {
-            flex: 1;
-        }
-        
-        .navbar-brand {
-            font-weight: bold;
-        }
-        
-        .footer {
-            margin-top: auto;
-            padding: 1rem 0;
-            background-color: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .btn-primary {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-        
-        .btn-primary:hover {
-            background-color: #0b5ed7;
-            border-color: #0a58ca;
-        }
-        
-        .card {
-            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-            border-radius: 0.5rem;
-            border: 1px solid rgba(0, 0, 0, 0.125);
-        }
-        
-        .card-header {
-            background-color: rgba(0, 0, 0, 0.03);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-        }
-        
-        .forum-item {
-            transition: all 0.2s ease;
-        }
-        
-        .forum-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        
-        .post-meta {
-            font-size: 0.875rem;
-            color: #6c757d;
-        }
-        
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        
-        .avatar-sm {
-            width: 30px;
-            height: 30px;
-        }
-        
-        .avatar-lg {
-            width: 80px;
-            height: 80px;
-        }
-        
-        @media (max-width: 767.98px) {
-            .card-title {
-                font-size: 1.25rem;
-            }
-            
-            .h1, h1 {
-                font-size: 1.75rem;
-            }
-            
-            .h2, h2 {
-                font-size: 1.5rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/custom.css">
 </head>
 <body>
     <!-- Navigation -->

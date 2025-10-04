@@ -12,7 +12,7 @@ define('DB_PASS', '');
 define('DB_NAME', 'forum_blog');
 
 // Application paths
-define('BASE_URL', 'http://forum.test'); // Change this to your domain
+define('BASE_URL', ''); // Empty base URL for relative paths
 define('ROOT_PATH', dirname(__DIR__));
 define('UPLOADS_PATH', ROOT_PATH . '/uploads');
 

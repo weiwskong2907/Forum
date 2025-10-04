@@ -20,8 +20,10 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     last_login TIMESTAMP NULL,
     is_active BOOLEAN DEFAULT TRUE,
+    remember_token VARCHAR(255) DEFAULT NULL,
     INDEX idx_username (username),
-    INDEX idx_email (email)
+    INDEX idx_email (email),
+    INDEX idx_remember_token (remember_token)
 ) ENGINE=InnoDB;
 
 -- User profiles table

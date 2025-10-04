@@ -20,18 +20,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
-    <script>
-        // Enable Bootstrap tooltips
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-        
-        // Enable Bootstrap popovers
-        var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-        var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-            return new bootstrap.Popover(popoverTriggerEl);
-        });
-    </script>
+    <script src="<?php echo BASE_URL; ?>/assets/js/custom.js"></script>
+    <?php if (basename($_SERVER['PHP_SELF']) === 'profile.php'): ?>
+    <script src="<?php echo BASE_URL; ?>/assets/js/profile-image-cropper.js"></script>
+    <?php endif; ?>
 </body>
 </html>

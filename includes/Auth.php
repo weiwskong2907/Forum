@@ -156,24 +156,8 @@ class Auth {
      */
     public function getCurrentUser() {
         if (!$this->isLoggedIn()) {
-            // Check for remember me cookie
-            if (isset($_COOKIE['remember_token'])) {
-                $token = $_COOKIE['remember_token'];
-                
-                $query = "SELECT user_id, username, email, role FROM users WHERE remember_token = ? AND is_active = 1 LIMIT 1";
-                $user = $this->db->fetchRow($query, [$token]);
-                
-                if ($user) {
-                    // Set session variables
-                    $_SESSION['user_id'] = $user['user_id'];
-                    $_SESSION['username'] = $user['username'];
-                    $_SESSION['email'] = $user['email'];
-                    $_SESSION['user_role'] = $user['role'];
-                    
-                    return $user;
-                }
-            }
-            
+            // Remember me functionality is disabled until database is updated
+            // Removing remember_token check to prevent errors
             return null;
         }
         

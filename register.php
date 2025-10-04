@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Verify CSRF token
     if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
         setFlashMessage('Invalid request. Please try again.', 'danger');
-        redirect(BASE_URL . '/register.php');
+        redirect('register.php');
     }
     
     $username = trim($_POST['username'] ?? '');
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $auth->login($username, $password);
             
             setFlashMessage('Registration successful! Welcome to our community.', 'success');
-            redirect(BASE_URL);
+            redirect('index.php');
         } else {
             setFlashMessage('Username or email already exists.', 'danger');
         }
@@ -87,7 +87,7 @@ include_once __DIR__ . '/includes/header.php';
                     <h1 class="h4 mb-0">Register</h1>
                 </div>
                 <div class="card-body">
-                    <form action="<?php echo BASE_URL; ?>/register.php" method="post">
+                    <form action="register.php" method="post">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         
                         <div class="mb-3">
