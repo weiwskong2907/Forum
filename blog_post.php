@@ -109,7 +109,7 @@ include_once __DIR__ . '/includes/header.php';
                         <?php foreach ($comments as $comment): ?>
                             <div class="comment mb-4">
                                 <div class="d-flex">
-                                    <img src="<?php echo !empty($comment['avatar']) ? BASE_URL . '/' . $comment['avatar'] : 'https://via.placeholder.com/40'; ?>" alt="<?php echo $comment['username']; ?>" class="avatar me-3">
+                                    <img src="<?php echo !empty($comment['avatar']) ? BASE_URL . '/' . $comment['avatar'] : BASE_URL . '/assets/default-avatar.svg'; ?>" alt="<?php echo $comment['username']; ?>" class="avatar me-3">
                                     
                                     <div>
                                         <div class="fw-bold"><?php echo $comment['username']; ?></div>

@@ -296,7 +296,7 @@ include_once __DIR__ . '/includes/header.php';
                     <h2 class="h5 mb-0">Profile Information</h2>
                 </div>
                 <div class="card-body text-center">
-                    <img src="<?php echo !empty($user['avatar']) ? $user['avatar'] : 'https://via.placeholder.com/150'; ?>" alt="<?php echo $user['username']; ?>" class="avatar-lg mb-3">
+                    <img src="<?php echo !empty($user['avatar']) ? $user['avatar'] : 'assets/default-avatar.svg'; ?>" alt="<?php echo $user['username']; ?>" class="avatar-lg mb-3">
                     
                     <h3 class="h4"><?php echo $user['username']; ?></h3>
                     <p class="text-muted">Member since <?php echo formatDate($user['created_at'], 'M j, Y'); ?></p>

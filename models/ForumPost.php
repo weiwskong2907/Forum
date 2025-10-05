@@ -39,7 +39,7 @@ class ForumPost {
      * @return array Posts
      */
     public function getByThreadId($threadId, $limit = 10, $offset = 0) {
-        $query = "SELECT p.*, u.username, u.avatar 
+        $query = "SELECT p.*, u.username, COALESCE(u.avatar, 'assets/default-avatar.svg') as avatar 
                  FROM forum_posts p 
                  JOIN users u ON p.user_id = u.user_id 
                  WHERE p.thread_id = ? 

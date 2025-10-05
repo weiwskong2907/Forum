@@ -54,9 +54,10 @@ class Auth {
         $userId = $this->db->insert('users', $userData);
         
         if ($userId) {
-            // Create user profile
+            // Create user profile with default avatar
             $profileData = [
-                'user_id' => $userId
+                'user_id' => $userId,
+                'avatar' => 'assets/default-avatar.svg'
             ];
             
             $this->db->insert('user_profiles', $profileData);

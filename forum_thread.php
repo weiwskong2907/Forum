@@ -223,7 +223,7 @@ include_once __DIR__ . '/includes/header.php';
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-2 text-center mb-3 mb-md-0">
-                            <img src="<?php echo !empty($post['avatar']) ? BASE_URL . '/' . $post['avatar'] : 'https://via.placeholder.com/100'; ?>" alt="<?php echo $post['username']; ?>" class="avatar-lg mb-2">
+                            <img src="<?php echo !empty($post['avatar']) ? BASE_URL . '/' . $post['avatar'] : BASE_URL . '/assets/default-avatar.svg'; ?>" alt="<?php echo $post['username']; ?>" class="avatar-lg mb-2">
                             
                             <div class="small text-muted">
                                 Posts: <?php echo $postModel->countByUserId($post['user_id']); ?>
