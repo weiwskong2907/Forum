@@ -78,13 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['create_thread'])) {
     
     // Validate input
     if (empty($title)) {
-        $errors[] = 'Title is required.';
+        $errors[] = 'Thread title is required.';
     } elseif (strlen($title) > 100) {
-        $errors[] = 'Title cannot exceed 100 characters.';
+        $errors[] = 'Thread title cannot exceed 100 characters.';
     }
     
     if (empty($content)) {
-        $errors[] = 'Content is required.';
+        $errors[] = 'Thread content is required.';
     }
     
     // Handle image upload
@@ -282,7 +282,7 @@ include_once __DIR__ . '/includes/header.php';
                 
                 <div class="mb-4">
                     <label for="content" class="form-label fw-bold">Content</label>
-                    <textarea class="form-control" id="content" name="content" rows="10" required><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : ''; ?></textarea>
+                    <textarea class="form-control" id="content" name="content" rows="10"><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : ''; ?></textarea>
                     <div class="form-text">Format your post using the editor tools above</div>
                 </div>
                 
@@ -375,15 +375,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Need to wait for TinyMCE to initialize
-        tinymce.get('content').on('init', function() {
+        if (tinymce.get('content')) {
             if (savedContent) {
                 tinymce.get('content').setContent(savedContent);
             }
-        });
+            
+            tinymce.get('content').on('init', function() {
+                if (savedContent) {
+                    tinymce.get('content').setContent(savedContent);
+                }
+            });
+        }
     }
     
-    // Clear draft when form is submitted
-    threadForm.addEventListener('submit', function() {
+    // Add client-side validation before form submission
+    threadForm.addEventListener('submit', function(e) {
+        const title = titleInput.value.trim();
+        const content = tinymce.get('content') ? tinymce.get('content').getContent().trim() : '';
+        
+        let isValid = true;
+        const errorMessages = [];
+        
+        if (!title) {
+            isValid = false;
+            errorMessages.push('Thread title is required.');
+        }
+        
+        if (!content) {
+            isValid = false;
+            errorMessages.push('Thread content is required.');
+        }
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fix the following errors:\n' + errorMessages.join('\n'));
+            return false;
+        }
+        
+        // Clear draft when form is submitted successfully
         localStorage.removeItem('thread_draft_title');
         localStorage.removeItem('thread_draft_content');
         localStorage.removeItem('thread_draft_tags');
