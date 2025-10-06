@@ -397,7 +397,37 @@ class ForumThread {
                        WHERE title LIKE ?";
         
         $result = $this->db->fetchRow($searchQuery, ['%' . $query . '%']);
+        return $result['count'];
+    }
+    
+    /**
+     * Update last post information for a thread
+     * 
+     * @param int $threadId Thread ID
+     * @return bool Success or failure
+     */
+    public function updateLastPost($threadId) {
+        // Get the latest post in the thread
+        $query = "SELECT p.post_id, p.created_at, p.user_id 
+                 FROM forum_posts p 
+                 WHERE p.thread_id = ? 
+                 ORDER BY p.created_at DESC 
+                 LIMIT 1";
         
+        $lastPost = $this->db->fetchRow($query, [$threadId]);
+        
+        if ($lastPost) {
+            // Update thread with last post information
+            $updateData = [
+                'last_post_id' => $lastPost['post_id'],
+                'last_post_at' => $lastPost['created_at'],
+                'last_post_user_id' => $lastPost['user_id']
+            ];
+            
+            return $this->db->update('forum_threads', $updateData, 'thread_id = ?', [$threadId]);
+        }
+        
+        return false;
         return $result['count'];
     }
     

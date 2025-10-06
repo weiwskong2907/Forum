@@ -50,6 +50,23 @@ class ForumPost {
     }
     
     /**
+     * Get first post by thread ID
+     * 
+     * @param int $threadId Thread ID
+     * @return array|null First post data or null if not found
+     */
+    public function getFirstPostByThreadId($threadId) {
+        $query = "SELECT p.*, u.username 
+                 FROM forum_posts p 
+                 JOIN users u ON p.user_id = u.user_id 
+                 WHERE p.thread_id = ? 
+                 ORDER BY p.created_at ASC 
+                 LIMIT 1";
+        
+        return $this->db->fetchRow($query, [$threadId]);
+    }
+    
+    /**
      * Count posts by thread ID
      * 
      * @param int $threadId Thread ID

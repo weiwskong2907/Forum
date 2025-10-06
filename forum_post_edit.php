@@ -96,18 +96,20 @@ if (isset($_POST['edit_post'])) {
                 $newSubforumId = $subforumModel->create($subforumData);
                 
                 if ($newSubforumId) {
-                    // Refresh subforums list
-                    $subforums = $subforumModel->getAll();
+                    // Set success message and redirect to forum page
                     setFlashMessage('Subforum created successfully.', 'success');
+                    redirect(BASE_URL . '/forum.php');
                 } else {
+                    // Log the error for debugging
+                    error_log('Failed to create subforum. Data: ' . print_r($subforumData, true));
                     $errors[] = 'Failed to create subforum. Please try again.';
                 }
             }
         }
         
         // Check if it's a post update
-        $title = trim($_POST['title']);
-        $content = trim($_POST['content']);
+        $title = trim($_POST['title'] ?? '');
+        $content = isset($_POST['content']) ? $_POST['content'] : '';
         $subforum_id = isset($_POST['subforum_id']) ? (int)$_POST['subforum_id'] : 0;
         
         // Validate title
@@ -208,22 +210,22 @@ if (isset($_POST['edit_post'])) {
             $success = true;
             
             try {
-                // Update post
-                if (!$postModel->update($postId, $postData)) {
-                    $success = false;
+                // Direct database update for post
+                $postUpdateQuery = "UPDATE forum_posts SET content = ? WHERE post_id = ?";
+                $db->query($postUpdateQuery, [$content, $postId]);
+                
+                // Direct database update for thread
+                $threadUpdateQuery = "UPDATE forum_threads SET title = ?, subforum_id = ? WHERE thread_id = ?";
+                $db->query($threadUpdateQuery, [$title, $subforum_id, $thread['thread_id']]);
+                
+                // Update featured image if provided
+                if ($featured_image) {
+                    $imageUpdateQuery = "UPDATE forum_threads SET featured_image = ? WHERE thread_id = ?";
+                $db->query($imageUpdateQuery, [$featured_image, $thread['thread_id']]);
                 }
                 
-                // Update thread
-                if (!$threadModel->update($thread['thread_id'], $threadData)) {
-                    $success = false;
-                }
-                
-                if ($success) {
-                    setFlashMessage('Post updated successfully.', 'success');
-                    redirect(BASE_URL . '/forum_thread.php?slug=' . $thread['slug'] . '#post-' . $postId);
-                } else {
-                    setFlashMessage('Failed to update post. Please try again.', 'danger');
-                }
+                setFlashMessage('Post updated successfully.', 'success');
+                redirect(BASE_URL . '/forum_thread.php?slug=' . $thread['slug'] . '#post-' . $postId);
             } catch (Exception $e) {
                 setFlashMessage('An error occurred: ' . $e->getMessage(), 'danger');
             }
@@ -241,59 +243,25 @@ include_once __DIR__ . '/includes/header.php';
 <!-- Add TinyMCE -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6.4.2/tinymce.min.js"></script>
 <script>
-    tinymce.init({
-        selector: '#content',
-        plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table emoticons',
-        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons',
-        height: 300,
-        menubar: false,
-        branding: false,
-        promotion: false,
-        images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
-        images_upload_credentials: true,
-        images_upload_handler: function (blobInfo, progress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.withCredentials = true;
-                xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
-                
-                xhr.upload.onprogress = (e) => {
-                    progress(e.loaded / e.total * 100);
-                };
-                
-                xhr.onload = function() {
-                    if (xhr.status === 403) {
-                        reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
-                        return;
-                    }
-                    
-                    if (xhr.status < 200 || xhr.status >= 300) {
-                        reject('HTTP Error: ' + xhr.status);
-                        return;
-                    }
-                    
-                    const json = JSON.parse(xhr.responseText);
-                    
-                    if (!json || typeof json.location != 'string') {
-                        reject('Invalid JSON: ' + xhr.responseText);
-                        return;
-                    }
-                    
-                    resolve(json.location);
-                };
-                
-                xhr.onerror = function() {
-                    reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
-                };
-                
-                const formData = new FormData();
-                formData.append('file', blobInfo.blob(), blobInfo.filename());
-                formData.append('csrf_token', '<?php echo Security::generateCSRFToken(); ?>');
-                
-                xhr.send(formData);
-            });
-        }
-    });
+// Initialize TinyMCE
+tinymce.init({
+    selector: '#content',
+    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+    images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
+    images_upload_credentials: true,
+    automatic_uploads: true,
+    images_reuse_filename: true,
+    relative_urls: false,
+    remove_script_host: false,
+    convert_urls: false,
+    height: 400,
+    setup: function (editor) {
+        editor.on('change', function () {
+            editor.save();
+        });
+    }
+});
 </script>
 
 <div class="container mt-4">
@@ -359,7 +327,7 @@ include_once __DIR__ . '/includes/header.php';
                 
                 <div class="mb-4">
                     <label for="content" class="form-label fw-bold">Content</label>
-                    <textarea class="form-control" id="content" name="content" rows="10"><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : htmlspecialchars($post['content']); ?></textarea>
+                    <textarea class="form-control" id="content" name="content" rows="10"><?php echo isset($_POST['content']) ? $_POST['content'] : $post['content']; ?></textarea>
                 </div>
                 
                 <div class="d-flex justify-content-between">

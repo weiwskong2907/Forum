@@ -162,7 +162,19 @@ function flashMessage() {
         unset($_SESSION['flash_message']);
         unset($_SESSION['flash_type']);
         
-        return '<div class="alert alert-' . $type . '">' . $message . '</div>';
+        // Handle array format for flash messages
+        if (is_array($message)) {
+            if (isset($message['message'])) {
+                $messageText = $message['message'];
+                $type = $message['type'] ?? $type;
+            } else {
+                $messageText = implode(' ', $message);
+            }
+        } else {
+            $messageText = $message;
+        }
+        
+        return '<div class="alert alert-' . $type . '">' . $messageText . '</div>';
     }
     
     return null;

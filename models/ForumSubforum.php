@@ -109,7 +109,8 @@ class ForumSubforum {
             'name' => $data['name'],
             'slug' => $slug,
             'description' => $data['description'] ?? null,
-            'display_order' => $data['display_order'] ?? 0
+            'display_order' => $data['display_order'] ?? 0,
+            'created_at' => date('Y-m-d H:i:s')
         ];
         
         // Insert subforum
