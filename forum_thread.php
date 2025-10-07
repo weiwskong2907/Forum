@@ -153,39 +153,55 @@ include_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>/forum.php">Forum</a></li>
-            <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>/forum_subforum.php?slug=<?php echo $subforum['slug']; ?>"><?php echo $subforum['name']; ?></a></li>
-            <li class="breadcrumb-item active" aria-current="page"><?php echo $thread['title']; ?></li>
-        </ol>
-    </nav>
+    <div class="row">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb bg-light p-3 rounded shadow-sm">
+                    <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>/forum.php" class="text-decoration-none"><i class="bi bi-house-door me-1"></i>Forum</a></li>
+                    <li class="breadcrumb-item"><a href="<?php echo BASE_URL; ?>/forum_subforum.php?slug=<?php echo $subforum['slug']; ?>" class="text-decoration-none"><?php echo htmlspecialchars($subforum['name']); ?></a></li>
+                    <li class="breadcrumb-item active fw-bold" aria-current="page"><?php echo htmlspecialchars($thread['title']); ?></li>
+                </ol>
+            </nav>
+        </div>
+    </div>
     
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><?php echo $thread['title']; ?></h1>
-        
-        <div>
-            <?php if ($auth->isLoggedIn()): ?>
-                <?php if ($isSubscribed): ?>
-                    <form method="post" class="d-inline me-2">
-                        <button type="submit" name="unsubscribe" class="btn btn-outline-secondary">
-                            <i class="fas fa-bell-slash"></i> Unsubscribe
-                        </button>
-                    </form>
-                <?php else: ?>
-                    <form method="post" class="d-inline me-2">
-                        <button type="submit" name="subscribe" class="btn btn-outline-primary">
-                            <i class="fas fa-bell"></i> Subscribe
-                        </button>
-                    </form>
-                <?php endif; ?>
-            <?php endif; ?>
+    <div class="card mb-4 shadow-sm border-0 rounded-3">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0"><?php echo htmlspecialchars($thread['title']); ?></h1>
+                
+                <div class="d-flex gap-2">
+                    <?php if ($auth->isLoggedIn()): ?>
+                        <?php if ($isSubscribed): ?>
+                            <form method="post" class="d-inline">
+                                <button type="submit" name="unsubscribe" class="btn btn-outline-secondary">
+                                    <i class="bi bi-bell-slash me-1"></i> Unsubscribe
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <form method="post" class="d-inline">
+                                <button type="submit" name="subscribe" class="btn btn-outline-primary">
+                                    <i class="bi bi-bell me-1"></i> Subscribe
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                    
+                    <?php if (isLoggedIn() && !$thread['is_locked']): ?>
+                        <a href="#reply-form" class="btn btn-primary">
+                            <i class="bi bi-reply-fill me-1"></i> Reply
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
             
-            <?php if (isLoggedIn() && !$thread['is_locked']): ?>
-                <a href="#reply-form" class="btn btn-primary">
-                    <i class="fas fa-reply me-1"></i> Reply
-                </a>
-            <?php endif; ?>
+            <div class="mt-3 text-muted">
+                <small>
+                    <i class="bi bi-person me-1"></i> Started by <?php echo htmlspecialchars($thread['username']); ?> 
+                    <i class="bi bi-clock ms-3 me-1"></i> <?php echo date('M j, Y g:i A', strtotime($thread['created_at'])); ?>
+                    <i class="bi bi-eye ms-3 me-1"></i> <?php echo number_format($thread['view_count']); ?> views
+                </small>
+            </div>
         </div>
     </div>
     
@@ -245,26 +261,27 @@ include_once __DIR__ . '/includes/header.php';
     <!-- Posts -->
     <?php if (!empty($posts)): ?>
         <?php foreach ($posts as $index => $post): ?>
-            <div class="card mb-4" id="post-<?php echo $post['post_id']; ?>">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <a href="<?php echo BASE_URL; ?>/profile.php?username=<?php echo $post['username']; ?>" class="text-decoration-none fw-bold">
+            <div class="card mb-4 shadow-sm border-0 rounded-3" id="post-<?php echo $post['post_id']; ?>">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light py-3">
+                    <div class="d-flex align-items-center">
+                        <a href="<?php echo BASE_URL; ?>/profile.php?username=<?php echo $post['username']; ?>" class="text-decoration-none fw-bold me-2">
                             <?php echo $post['username']; ?>
                         </a>
-                        <span class="text-muted ms-2"><?php echo formatDate($post['created_at']); ?></span>
+                        <span class="badge bg-secondary rounded-pill ms-2">#<?php echo ($page - 1) * $perPage + $index + 1; ?></span>
+                        <span class="text-muted ms-3"><i class="bi bi-clock me-1"></i><?php echo formatDate($post['created_at']); ?></span>
                     </div>
                     <div>
-                        <a href="<?php echo BASE_URL; ?>/forum_thread.php?slug=<?php echo $slug; ?>&page=<?php echo $page; ?>#post-<?php echo $post['post_id']; ?>" class="text-decoration-none text-muted">
-                            #<?php echo ($page - 1) * $perPage + $index + 1; ?>
+                        <a href="<?php echo BASE_URL; ?>/forum_thread.php?slug=<?php echo $slug; ?>&page=<?php echo $page; ?>#post-<?php echo $post['post_id']; ?>" class="btn btn-sm btn-outline-secondary">
+                            <i class="bi bi-link-45deg"></i> Link
                         </a>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body p-4">
                     <div class="row">
                         <div class="col-md-2 text-center mb-3 mb-md-0">
-                            <img src="<?php echo !empty($post['avatar']) ? BASE_URL . '/' . $post['avatar'] : BASE_URL . '/assets/default-avatar.svg'; ?>" alt="<?php echo $post['username']; ?>" class="avatar-lg mb-2">
+                            <img src="<?php echo !empty($post['avatar']) ? BASE_URL . '/' . $post['avatar'] : BASE_URL . '/assets/default-avatar.svg'; ?>" alt="<?php echo $post['username']; ?>" class="avatar-lg rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
                             
-                            <div class="small text-muted">
+                            <div class="badge bg-primary mb-2">
                                 Posts: <?php echo $postModel->countByUserId($post['user_id']); ?>
                             </div>
                         </div>
@@ -353,97 +370,43 @@ include_once __DIR__ . '/includes/header.php';
     
     <!-- Reply Form -->
     <?php if (isLoggedIn() && !$thread['is_locked']): ?>
-        <div class="card mt-4" id="reply-form">
-            <div class="card-header">
-                <h2 class="h5 mb-0">Post Reply</h2>
+        <div class="card mt-5 shadow-sm border-0 rounded-3" id="reply-form">
+            <div class="card-header bg-light py-3">
+                <h5 class="mb-0"><i class="bi bi-chat-dots me-2"></i>Post Reply</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
                 <form action="<?php echo BASE_URL; ?>/forum_thread.php?slug=<?php echo $slug; ?>" method="post">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="add_reply" value="1">
                     
                     <div class="mb-3">
-                        <textarea class="form-control" id="reply-editor" name="content" rows="5"></textarea>
+                        <label for="reply-editor" class="form-label fw-bold">Your Reply</label>
+                        <textarea class="form-control" id="reply-editor" name="content" rows="6" required
+                            style="width: 100%; min-height: 200px; padding: 15px; font-size: 16px; border: 1px solid #ced4da; 
+                            border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+                            font-family: system-ui, -apple-system, sans-serif;"></textarea>
+                        <div class="form-text text-muted">Format your reply with clear paragraphs for better readability</div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-reply me-1"></i> Post Reply
+                    <button type="submit" class="btn btn-primary btn-lg px-4">
+                        <i class="bi bi-send me-2"></i>Submit Reply
                     </button>
                     
                     <script>
-                    // Initialize TinyMCE when the document is ready
+                    // Auto-resize textarea based on content
                     document.addEventListener('DOMContentLoaded', function() {
-                        tinymce.init({
-                            selector: '#reply-editor',
-                            height: 300,
-                            menubar: false,
-                            plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table emoticons',
-                            toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons',
-                            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; }',
-                            images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
-                            images_upload_credentials: true,
-                            api_key: 'xj1pomo1mrpu7fz9gus1zulblwty6ajfd4c76gtbmsx5fhwn',
-                            branding: false,
-                            promotion: false,
-                            readonly: false,
-                            setup: function(editor) {
-                                editor.on('init', function() {
-                                    // Make sure the editor container is visible
-                                    const editorContainer = document.querySelector('.tox.tox-tinymce');
-                                    if (editorContainer) {
-                                        editorContainer.style.display = 'block';
-                                    }
-                                    
-                                    // Ensure the editor is editable
-                                    editor.mode.set('design');
-                                    
-                                    // Force focus to make sure it's interactive
-                                    setTimeout(function() {
-                                        editor.focus();
-                                    }, 100);
-                                });
-                            },
-                            images_upload_handler: function (blobInfo, progress) {
-                                return new Promise(function(resolve, reject) {
-                                    const xhr = new XMLHttpRequest();
-                                    xhr.withCredentials = true;
-                                    xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
-                                    
-                                    xhr.upload.onprogress = function(e) {
-                                        progress(e.loaded / e.total * 100);
-                                    };
-                                    
-                                    xhr.onload = function() {
-                                        if (xhr.status === 403) {
-                                            reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
-                                            return;
-                                        }
-                                        
-                                        if (xhr.status < 200 || xhr.status >= 300) {
-                                            reject('HTTP Error: ' + xhr.status);
-                                            return;
-                                        }
-                                        
-                                        const json = JSON.parse(xhr.responseText);
-                                        
-                                        if (!json || typeof json.location != 'string') {
-                                            reject('Invalid JSON: ' + xhr.responseText);
-                                            return;
-                                        }
-                                        
-                                        resolve(json.location);
-                                    };
-                                    
-                                    xhr.onerror = function() {
-                                        reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
-                                    };
-                                    
-                                    const formData = new FormData();
-                                    formData.append('file', blobInfo.blob(), blobInfo.filename());
-                                    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
-                                    
-                                    xhr.send(formData);
-                                });
+                        const replyEditor = document.getElementById('reply-editor');
+                        if (replyEditor) {
+                            // Auto-resize functionality
+                            replyEditor.addEventListener('input', function() {
+                                this.style.height = 'auto';
+                                this.style.height = (this.scrollHeight + 10) + 'px';
+                            });
+                            
+                            // Focus the textarea when reply form is visible
+                            document.querySelector('#reply-form button').addEventListener('click', function() {
+                                replyEditor.focus();
+                            });
                         }
                     });
                     </script>
@@ -451,8 +414,8 @@ include_once __DIR__ . '/includes/header.php';
             </div>
         </div>
     <?php elseif (!isLoggedIn()): ?>
-        <div class="alert alert-warning mt-4">
-            Please <a href="<?php echo BASE_URL; ?>/login.php">login</a> to reply to this thread.
+        <div class="alert alert-warning mt-4 p-3 rounded-3 shadow-sm">
+            Please <a href="<?php echo BASE_URL; ?>/login.php" class="fw-bold">login</a> to reply to this thread.
         </div>
     <?php endif; ?>
     
