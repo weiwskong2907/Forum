@@ -351,6 +351,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     <textarea class="form-control" id="content" name="content" rows="10"><?php echo isset($_POST['content']) ? $_POST['content'] : $post['content']; ?></textarea>
                 </div>
                 
+                <!-- Add TinyMCE -->
+                <?php include_once __DIR__ . '/config/tinymce_config.php'; ?>
+<script src="<?php echo getTinymceCdnUrl(); ?>" referrerpolicy="origin"></script>
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    tinymce.init({
+                        selector: '#content',
+                        height: 400,
+                        menubar: false,
+                        plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                        ],
+                        toolbar: 'undo redo | blocks | ' +
+                            'bold italic backcolor | alignleft aligncenter ' +
+                            'alignright alignjustify | bullist numlist outdent indent | ' +
+                            'removeformat | help',
+                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
+                        setup: function(editor) {
+                            editor.on('init', function() {
+                                editor.getBody().style.backgroundColor = '#ffffff';
+                                editor.getBody().style.color = '#000000';
+                            });
+                        }
+                    });
+                });
+                </script>
+                
                 <div class="d-flex justify-content-between">
                     <a href="<?php echo BASE_URL; ?>/forum_thread.php?slug=<?php echo $thread['slug']; ?>#post-<?php echo $postId; ?>" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-1"></i> Cancel

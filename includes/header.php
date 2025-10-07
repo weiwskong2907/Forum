@@ -29,7 +29,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     
     <!-- TinyMCE (jsdelivr CDN version with MIT license) -->
-    <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>/assets/css/custom.css">

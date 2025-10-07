@@ -82,6 +82,27 @@ class ForumPost {
     }
     
     /**
+     * Get post position in thread
+     * 
+     * @param int $threadId Thread ID
+     * @param int $postId Post ID
+     * @return int Position (1-based) or 0 if not found
+     */
+    public function getPostPosition($threadId, $postId) {
+        $query = "SELECT COUNT(*) as position 
+                 FROM forum_posts 
+                 WHERE thread_id = ? 
+                 AND created_at <= (
+                     SELECT created_at 
+                     FROM forum_posts 
+                     WHERE post_id = ? AND thread_id = ?
+                 )";
+        
+        $result = $this->db->fetchRow($query, [$threadId, $postId, $threadId]);
+        return $result['position'] ?? 0;
+    }
+    
+    /**
      * Search forum posts
      * 
      * @param string $query Search query

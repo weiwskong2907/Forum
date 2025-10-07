@@ -61,12 +61,43 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
 
+// Check if specific post is requested in URL fragment
+$requestedPostId = null;
+if (isset($_SERVER['REQUEST_URI']) && strpos($_SERVER['REQUEST_URI'], '#post-') !== false) {
+    $parts = explode('#post-', $_SERVER['REQUEST_URI']);
+    if (isset($parts[1])) {
+        $requestedPostId = intval($parts[1]);
+    }
+}
+
 // Get posts
 $posts = $postModel->getByThreadId($thread['thread_id'], $perPage, $offset);
 $totalPosts = $postModel->countByThreadId($thread['thread_id']);
 
 // Calculate total pages
 $totalPages = ceil($totalPosts / $perPage);
+
+// If a specific post is requested but not on current page, find its page
+if ($requestedPostId !== null) {
+    $postExists = false;
+    foreach ($posts as $post) {
+        if ($post['post_id'] == $requestedPostId) {
+            $postExists = true;
+            break;
+        }
+    }
+    
+    if (!$postExists) {
+        // Find which page contains the post
+        $postPosition = $postModel->getPostPosition($thread['thread_id'], $requestedPostId);
+        if ($postPosition > 0) {
+            $correctPage = ceil($postPosition / $perPage);
+            if ($correctPage != $page) {
+                redirect(BASE_URL . '/forum_thread.php?slug=' . $slug . '&page=' . $correctPage . '#post-' . $requestedPostId);
+            }
+        }
+    }
+}
 
 // Process reply form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_reply'])) {

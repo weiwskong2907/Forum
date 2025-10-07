@@ -173,84 +173,33 @@ $pageTitle = 'Create Thread in ' . $subforum['name'];
 include_once __DIR__ . '/includes/header.php';
 ?>
 
+<?php include_once __DIR__ . '/config/tinymce_config.php'; ?>
 <!-- Add TinyMCE -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     tinymce.init({
         selector: '#content',
-        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
-        height: 300,
+        height: 400,
         menubar: false,
-        api_key: 'xj1pomo1mrpu7fz9gus1zulblwty6ajfd4c76gtbmsx5fhwn',
-        branding: false,
-        promotion: false,
-        readonly: false,
-        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; }',
-        images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
-        images_upload_credentials: true,
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+        ],
+        toolbar: 'undo redo | blocks | ' +
+            'bold italic backcolor | alignleft aligncenter ' +
+            'alignright alignjustify | bullist numlist outdent indent | ' +
+            'removeformat | help',
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
         setup: function(editor) {
             editor.on('init', function() {
-                // Make sure the editor container is visible
-                const editorContainer = document.querySelector('.tox.tox-tinymce');
-                if (editorContainer) {
-                    editorContainer.style.display = 'block';
-                }
-                
-                // Ensure the editor is in design mode
-                editor.mode.set('design');
-                
-                // Force focus after a short delay
-                setTimeout(function() {
-                    editor.focus();
-                }, 100);
-            });
-        },
-        images_upload_handler: function (blobInfo, progress) {
-            return new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.withCredentials = true;
-                xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
-                
-                xhr.upload.onprogress = function (e) {
-                    progress(e.loaded / e.total * 100);
-                };
-                
-                xhr.onload = function() {
-                    if (xhr.status === 403) {
-                        reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
-                        return;
-                    }
-                    
-                    if (xhr.status < 200 || xhr.status >= 300) {
-                        reject('HTTP Error: ' + xhr.status);
-                        return;
-                    }
-                    
-                    const json = JSON.parse(xhr.responseText);
-                    
-                    if (!json || typeof json.location != 'string') {
-                        reject('Invalid JSON: ' + xhr.responseText);
-                        return;
-                    }
-                    
-                    resolve(json.location);
-                };
-                
-                xhr.onerror = function() {
-                    reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
-                };
-                
-                const formData = new FormData();
-                formData.append('file', blobInfo.blob(), blobInfo.filename());
-                formData.append('csrf_token', '<?php echo Security::generateCSRFToken(); ?>');
-                
-                xhr.send(formData);
+                editor.getBody().style.backgroundColor = '#ffffff';
+                editor.getBody().style.color = '#000000';
             });
         }
     });
-});
+    });
 </script>
 
 <div class="container mt-4">
@@ -304,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 <div class="mb-4">
                     <label for="content" class="form-label fw-bold">Content</label>
-                    <textarea class="form-control" id="content" name="content" rows="10"><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : ''; ?></textarea>
+                    <textarea class="form-control" id="content" name="content" rows="10" style="width: 100%; min-height: 300px;"><?php echo isset($_POST['content']) ? htmlspecialchars($_POST['content']) : ''; ?></textarea>
                     <div class="form-text">Format your post using the editor tools above</div>
                 </div>
                 
