@@ -158,6 +158,14 @@ include_once __DIR__ . '/includes/header.php';
         </div>
     </div>
     
+    <?php if (!empty($thread['featured_image'])): ?>
+    <div class="card mb-4">
+        <div class="card-body text-center">
+            <img src="<?php echo BASE_URL . '/uploads/forum/' . basename($thread['featured_image']); ?>" alt="Thread featured image" class="img-fluid rounded" style="max-height: 500px; width: auto;">
+        </div>
+    </div>
+    <?php endif; ?>
+    
     <?php if ($thread['is_locked']): ?>
         <div class="alert alert-warning mb-4">
             <i class="fas fa-lock me-2"></i> This thread is locked. You cannot reply.
@@ -324,7 +332,7 @@ include_once __DIR__ . '/includes/header.php';
                     <input type="hidden" name="add_reply" value="1">
                     
                     <div class="mb-3">
-                        <textarea class="form-control" id="reply-editor" name="content" rows="5" required></textarea>
+                        <textarea class="form-control" id="reply-editor" name="content" rows="5"></textarea>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">
@@ -332,56 +340,79 @@ include_once __DIR__ . '/includes/header.php';
                     </button>
                     
                     <script>
-                    tinymce.init({
-                        selector: '#reply-editor',
-                        height: 300,
-                        menubar: false,
-                        plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table emoticons',
-                        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons',
-                        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; }',
-                        images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
-                        images_upload_credentials: true,
-                        images_upload_handler: function (blobInfo, progress) {
-                            return new Promise((resolve, reject) => {
-                                const xhr = new XMLHttpRequest();
-                                xhr.withCredentials = true;
-                                xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
-                                
-                                xhr.upload.onprogress = (e) => {
-                                    progress(e.loaded / e.total * 100);
-                                };
-                                
-                                xhr.onload = function() {
-                                    if (xhr.status === 403) {
-                                        reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
-                                        return;
+                    // Initialize TinyMCE when the document is ready
+                    document.addEventListener('DOMContentLoaded', function() {
+                        tinymce.init({
+                            selector: '#reply-editor',
+                            height: 300,
+                            menubar: false,
+                            plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table emoticons',
+                            toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons',
+                            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; }',
+                            images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
+                            images_upload_credentials: true,
+                            api_key: 'xj1pomo1mrpu7fz9gus1zulblwty6ajfd4c76gtbmsx5fhwn',
+                            branding: false,
+                            promotion: false,
+                            readonly: false,
+                            setup: function(editor) {
+                                editor.on('init', function() {
+                                    // Make sure the editor container is visible
+                                    const editorContainer = document.querySelector('.tox.tox-tinymce');
+                                    if (editorContainer) {
+                                        editorContainer.style.display = 'block';
                                     }
                                     
-                                    if (xhr.status < 200 || xhr.status >= 300) {
-                                        reject('HTTP Error: ' + xhr.status);
-                                        return;
-                                    }
+                                    // Ensure the editor is editable
+                                    editor.mode.set('design');
                                     
-                                    const json = JSON.parse(xhr.responseText);
+                                    // Force focus to make sure it's interactive
+                                    setTimeout(function() {
+                                        editor.focus();
+                                    }, 100);
+                                });
+                            },
+                            images_upload_handler: function (blobInfo, progress) {
+                                return new Promise(function(resolve, reject) {
+                                    const xhr = new XMLHttpRequest();
+                                    xhr.withCredentials = true;
+                                    xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
                                     
-                                    if (!json || typeof json.location != 'string') {
-                                        reject('Invalid JSON: ' + xhr.responseText);
-                                        return;
-                                    }
+                                    xhr.upload.onprogress = function(e) {
+                                        progress(e.loaded / e.total * 100);
+                                    };
                                     
-                                    resolve(json.location);
-                                };
-                                
-                                xhr.onerror = function () {
-                                    reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
-                                };
-                                
-                                const formData = new FormData();
-                                formData.append('file', blobInfo.blob(), blobInfo.filename());
-                                formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
-                                
-                                xhr.send(formData);
-                            });
+                                    xhr.onload = function() {
+                                        if (xhr.status === 403) {
+                                            reject({ message: 'HTTP Error: ' + xhr.status, remove: true });
+                                            return;
+                                        }
+                                        
+                                        if (xhr.status < 200 || xhr.status >= 300) {
+                                            reject('HTTP Error: ' + xhr.status);
+                                            return;
+                                        }
+                                        
+                                        const json = JSON.parse(xhr.responseText);
+                                        
+                                        if (!json || typeof json.location != 'string') {
+                                            reject('Invalid JSON: ' + xhr.responseText);
+                                            return;
+                                        }
+                                        
+                                        resolve(json.location);
+                                    };
+                                    
+                                    xhr.onerror = function() {
+                                        reject('Image upload failed due to a XHR Transport error. Code: ' + xhr.status);
+                                    };
+                                    
+                                    const formData = new FormData();
+                                    formData.append('file', blobInfo.blob(), blobInfo.filename());
+                                    formData.append('csrf_token', '<?php echo generateCSRFToken(); ?>');
+                                    
+                                    xhr.send(formData);
+                                });
                         }
                     });
                     </script>

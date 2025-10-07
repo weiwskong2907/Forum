@@ -174,25 +174,46 @@ include_once __DIR__ . '/includes/header.php';
 ?>
 
 <!-- Add TinyMCE -->
-<script src="https://cdn.jsdelivr.net/npm/tinymce@6.4.2/tinymce.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
+document.addEventListener('DOMContentLoaded', function() {
     tinymce.init({
         selector: '#content',
-        plugins: 'autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table emoticons',
-        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image emoticons',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
         height: 300,
         menubar: false,
+        api_key: 'xj1pomo1mrpu7fz9gus1zulblwty6ajfd4c76gtbmsx5fhwn',
         branding: false,
         promotion: false,
+        readonly: false,
+        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 16px; }',
         images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
         images_upload_credentials: true,
+        setup: function(editor) {
+            editor.on('init', function() {
+                // Make sure the editor container is visible
+                const editorContainer = document.querySelector('.tox.tox-tinymce');
+                if (editorContainer) {
+                    editorContainer.style.display = 'block';
+                }
+                
+                // Ensure the editor is in design mode
+                editor.mode.set('design');
+                
+                // Force focus after a short delay
+                setTimeout(function() {
+                    editor.focus();
+                }, 100);
+            });
+        },
         images_upload_handler: function (blobInfo, progress) {
             return new Promise((resolve, reject) => {
                 const xhr = new XMLHttpRequest();
                 xhr.withCredentials = true;
                 xhr.open('POST', '<?php echo BASE_URL; ?>/upload_image.php');
                 
-                xhr.upload.onprogress = (e) => {
+                xhr.upload.onprogress = function (e) {
                     progress(e.loaded / e.total * 100);
                 };
                 
@@ -229,6 +250,7 @@ include_once __DIR__ . '/includes/header.php';
             });
         }
     });
+});
 </script>
 
 <div class="container mt-4">

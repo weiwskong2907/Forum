@@ -241,26 +241,47 @@ include_once __DIR__ . '/includes/header.php';
 ?>
 
 <!-- Add TinyMCE -->
-<script src="https://cdn.jsdelivr.net/npm/tinymce@6.4.2/tinymce.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.2/tinymce.min.js" referrerpolicy="origin"></script>
 <script>
-// Initialize TinyMCE
-tinymce.init({
-    selector: '#content',
-    plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
-    toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
-    images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
-    images_upload_credentials: true,
-    automatic_uploads: true,
-    images_reuse_filename: true,
-    relative_urls: false,
-    remove_script_host: false,
-    convert_urls: false,
-    height: 400,
-    setup: function (editor) {
-        editor.on('change', function () {
-            editor.save();
-        });
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize TinyMCE
+    tinymce.init({
+        selector: '#content',
+        plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+        toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat',
+        images_upload_url: '<?php echo BASE_URL; ?>/upload_image.php',
+        images_upload_credentials: true,
+        automatic_uploads: true,
+        images_reuse_filename: true,
+        relative_urls: false,
+        remove_script_host: false,
+        convert_urls: false,
+        height: 400,
+        api_key: 'xj1pomo1mrpu7fz9gus1zulblwty6ajfd4c76gtbmsx5fhwn',
+        branding: false,
+        promotion: false,
+        readonly: false,
+        setup: function (editor) {
+            editor.on('init', function() {
+                // Make sure the editor container is visible
+                const editorContainer = document.querySelector('.tox.tox-tinymce');
+                if (editorContainer) {
+                    editorContainer.style.display = 'block';
+                }
+                
+                // Ensure the editor is editable
+                editor.mode.set('design');
+                
+                // Force focus to make sure it's interactive
+                setTimeout(function() {
+                    editor.focus();
+                }, 100);
+            });
+            editor.on('change', function () {
+                editor.save();
+            });
+        }
+    });
 });
 </script>
 
