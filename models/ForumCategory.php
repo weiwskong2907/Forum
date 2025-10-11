@@ -39,6 +39,16 @@ class ForumCategory {
     }
     
     /**
+     * Get all categories
+     * 
+     * @return array All categories
+     */
+    public function getAll() {
+        $query = "SELECT * FROM forum_categories ORDER BY display_order ASC, name ASC";
+        return $this->db->fetchAll($query);
+    }
+    
+    /**
      * Get all categories with subforums
      * 
      * @return array Categories with subforums

@@ -6,6 +6,9 @@
  */
 class ForumThread {
     private $db;
+    private $cache = [];
+    private $cacheEnabled = true;
+    private $cacheTTL = 300; // 5 minutes cache lifetime
     
     /**
      * Constructor
@@ -15,12 +18,87 @@ class ForumThread {
     }
     
     /**
+     * Enable or disable caching
+     * 
+     * @param bool $enabled Whether caching is enabled
+     */
+    public function setCaching($enabled) {
+        $this->cacheEnabled = $enabled;
+    }
+    
+    /**
+     * Set cache TTL (time to live)
+     * 
+     * @param int $seconds Cache lifetime in seconds
+     */
+    public function setCacheTTL($seconds) {
+        $this->cacheTTL = $seconds;
+    }
+    
+    /**
+     * Get item from cache
+     * 
+     * @param string $key Cache key
+     * @return mixed|null Cached data or null if not found/expired
+     */
+    private function getCache($key) {
+        if (!$this->cacheEnabled || !isset($this->cache[$key])) {
+            return null;
+        }
+        
+        $item = $this->cache[$key];
+        if (time() > $item['expires']) {
+            unset($this->cache[$key]);
+            return null;
+        }
+        
+        return $item['data'];
+    }
+    
+    /**
+     * Set item in cache
+     * 
+     * @param string $key Cache key
+     * @param mixed $data Data to cache
+     */
+    private function setCache($key, $data) {
+        if (!$this->cacheEnabled) {
+            return;
+        }
+        
+        $this->cache[$key] = [
+            'data' => $data,
+            'expires' => time() + $this->cacheTTL
+        ];
+    }
+    
+    /**
+     * Clear cache for specific key or all cache
+     * 
+     * @param string|null $key Cache key to clear, or null to clear all
+     */
+    public function clearCache($key = null) {
+        if ($key === null) {
+            $this->cache = [];
+        } elseif (isset($this->cache[$key])) {
+            unset($this->cache[$key]);
+        }
+    }
+    
+    /**
      * Get thread by ID
      * 
      * @param int $threadId Thread ID
      * @return array|null Thread data or null if not found
      */
     public function getById($threadId) {
+        $cacheKey = 'thread_' . $threadId;
+        $cached = $this->getCache($cacheKey);
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+        
         $query = "SELECT t.*, s.name as subforum_name, s.category_id, u.username 
                  FROM forum_threads t 
                  JOIN forum_subforums s ON t.subforum_id = s.subforum_id 
@@ -28,7 +106,13 @@ class ForumThread {
                  WHERE t.thread_id = ? 
                  LIMIT 1";
         
-        return $this->db->fetchRow($query, [$threadId]);
+        $result = $this->db->fetchRow($query, [$threadId]);
+        
+        if ($result) {
+            $this->setCache($cacheKey, $result);
+        }
+        
+        return $result;
     }
     
     /**
@@ -38,6 +122,13 @@ class ForumThread {
      * @return array|null Thread data or null if not found
      */
     public function getBySlug($slug) {
+        $cacheKey = 'thread_by_slug_' . $slug;
+        $cached = $this->getCache($cacheKey);
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+        
         $query = "SELECT t.*, s.name as subforum_name, s.category_id, u.username 
                  FROM forum_threads t 
                  JOIN forum_subforums s ON t.subforum_id = s.subforum_id 
@@ -45,7 +136,15 @@ class ForumThread {
                  WHERE t.slug = ? 
                  LIMIT 1";
         
-        return $this->db->fetchRow($query, [$slug]);
+        $result = $this->db->fetchRow($query, [$slug]);
+        
+        if ($result) {
+            $this->setCache($cacheKey, $result);
+            // Also cache by ID for consistency
+            $this->setCache('thread_' . $result['thread_id'], $result);
+        }
+        
+        return $result;
     }
     
     /**
@@ -57,13 +156,17 @@ class ForumThread {
      * @return array Threads
      */
     public function getBySubforumId($subforumId, $limit = 20, $offset = 0) {
+        // Get the last post user for each thread
         $query = "SELECT t.*, u.username, 
-                 (SELECT COUNT(*) FROM forum_posts WHERE thread_id = t.thread_id) as post_count,
-                 (SELECT u2.username FROM forum_posts p2 JOIN users u2 ON p2.user_id = u2.user_id 
-                  WHERE p2.thread_id = t.thread_id ORDER BY p2.created_at DESC LIMIT 1) as last_post_username
+                 COUNT(DISTINCT p.post_id) as post_count,
+                 (SELECT username FROM users WHERE user_id = 
+                    (SELECT user_id FROM forum_posts WHERE thread_id = t.thread_id ORDER BY created_at DESC LIMIT 1)
+                 ) as last_post_username
                  FROM forum_threads t 
                  JOIN users u ON t.user_id = u.user_id 
+                 LEFT JOIN forum_posts p ON p.thread_id = t.thread_id
                  WHERE t.subforum_id = ? 
+                 GROUP BY t.thread_id
                  ORDER BY t.is_sticky DESC, t.last_post_at DESC 
                  LIMIT ?, ?";
         
@@ -186,32 +289,55 @@ class ForumThread {
      * @return bool Success or failure
      */
     public function update($threadId, $data) {
-        // Get current thread
-        $query = "SELECT * FROM forum_threads WHERE thread_id = ? LIMIT 1";
-        $currentThread = $this->db->fetchRow($query, [$threadId]);
-        
-        if (!$currentThread) {
-            return false;
-        }
-        
-        // Generate slug if title changed
-        if (isset($data['title']) && $data['title'] !== $currentThread['title']) {
-            $slug = createSlug($data['title']);
+        try {
+            // Get current thread
+            $query = "SELECT * FROM forum_threads WHERE thread_id = ? LIMIT 1";
+            $currentThread = $this->db->fetchRow($query, [$threadId]);
             
-            // Check if slug exists
-            $query = "SELECT thread_id FROM forum_threads WHERE slug = ? AND thread_id != ? LIMIT 1";
-            $existingThread = $this->db->fetchRow($query, [$slug, $threadId]);
-            
-            if ($existingThread) {
-                // Append a random string to make the slug unique
-                $slug .= '-' . substr(md5(uniqid()), 0, 6);
+            if (!$currentThread) {
+                return false;
             }
             
-            $data['slug'] = $slug;
+            // Generate slug if title changed
+            if (isset($data['title']) && $data['title'] !== $currentThread['title']) {
+                $slug = createSlug($data['title']);
+                
+                // Check if slug exists
+                $query = "SELECT thread_id FROM forum_threads WHERE slug = ? AND thread_id != ? LIMIT 1";
+                $existingThread = $this->db->fetchRow($query, [$slug, $threadId]);
+                
+                if ($existingThread) {
+                    // Append a random string to make the slug unique
+                    $slug .= '-' . substr(md5(uniqid()), 0, 6);
+                }
+                
+                $data['slug'] = $slug;
+            }
+            
+            // Set updated_at timestamp if not provided
+            if (!isset($data['updated_at'])) {
+                $data['updated_at'] = date('Y-m-d H:i:s');
+            }
+            
+            // Update thread
+            $result = $this->db->update('forum_threads', $data, 'thread_id = ?', [$threadId]);
+            
+            // Clear cache for this thread
+            if ($result) {
+                $this->clearCache('thread_' . $threadId);
+                $this->clearCache('thread_by_slug_' . ($data['slug'] ?? $currentThread['slug']));
+                
+                // Also clear any list caches that might contain this thread
+                $this->clearCache('threads_subforum_' . $currentThread['subforum_id']);
+                $this->clearCache('latest_threads');
+                $this->clearCache('recent_threads');
+            }
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log('Error updating thread: ' . $e->getMessage());
+            return false;
         }
-        
-        // Update thread
-        return $this->db->update('forum_threads', $data, 'thread_id = ?', [$threadId]);
     }
     
     /**
@@ -354,15 +480,31 @@ class ForumThread {
      * @return array Threads
      */
     public function getAll($limit = 20, $offset = 0) {
+        $cacheKey = 'threads_all_' . $limit . '_' . $offset;
+        $cached = $this->getCache($cacheKey);
+        
+        if ($cached !== null) {
+            return $cached;
+        }
+        
+        // Optimized query using JOIN instead of subquery for better performance
         $query = "SELECT t.*, s.name as subforum_name, u.username, 
-                 (SELECT COUNT(*) FROM forum_posts WHERE thread_id = t.thread_id) as post_count
+                 COUNT(DISTINCT p.post_id) as post_count
                  FROM forum_threads t 
                  JOIN forum_subforums s ON t.subforum_id = s.subforum_id 
                  JOIN users u ON t.user_id = u.user_id 
+                 LEFT JOIN forum_posts p ON p.thread_id = t.thread_id
+                 GROUP BY t.thread_id
                  ORDER BY t.created_at DESC 
                  LIMIT ?, ?";
         
-        return $this->db->fetchAll($query, [$offset, $limit]);
+        $result = $this->db->fetchAll($query, [$offset, $limit]);
+        
+        if ($result) {
+            $this->setCache($cacheKey, $result);
+        }
+        
+        return $result;
     }
     
     /**

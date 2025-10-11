@@ -74,12 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($title)) {
         $errors[] = 'Title is required.';
+    } elseif (strlen($title) < 3) {
+        $errors[] = 'Title must be at least 3 characters.';
     } elseif (strlen($title) > 100) {
         $errors[] = 'Title cannot exceed 100 characters.';
+    } elseif (!preg_match('/^[a-zA-Z0-9\s\-_.,!?\'":;()[\]{}]+$/', $title)) {
+        $errors[] = 'Title contains invalid characters.';
     }
     
     if (empty($content)) {
         $errors[] = 'Content is required.';
+    } elseif (strlen($content) < 10) {
+        $errors[] = 'Content must be at least 10 characters.';
+    } elseif (strlen($content) > 50000) {
+        $errors[] = 'Content is too long (maximum 50,000 characters).';
     }
     
     // If no errors, update thread
@@ -93,40 +101,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug = $slug . '-' . time();
         }
         
-        // Update thread data
-        $threadData = [
-            'title' => $title,
-            'slug' => $slug,
-            'is_sticky' => $isSticky,
-            'is_locked' => $isLocked,
-            'updated_at' => date('Y-m-d H:i:s')
-        ];
+        // Begin transaction
+        $db = Database::getInstance();
+        $db->beginTransaction();
         
-        // Update thread
-        if ($threadModel->update($threadId, $threadData)) {
-            // Get first post of the thread to update its content
-            $postModel = new ForumPost();
-            $firstPost = $postModel->getFirstPostByThreadId($threadId);
+        try {
+            // Update thread data
+            $threadData = [
+                'title' => $title,
+                'slug' => $slug,
+                'is_sticky' => $isSticky,
+                'is_locked' => $isLocked,
+                'updated_at' => date('Y-m-d H:i:s')
+            ];
             
-            if ($firstPost) {
-                // Update first post
-                $postData = [
-                    'content' => $content,
-                    'updated_at' => date('Y-m-d H:i:s')
-                ];
+            // Update thread
+            if ($threadModel->update($threadId, $threadData)) {
+                // Get first post of the thread to update its content
+                $postModel = new ForumPost();
+                $firstPost = $postModel->getFirstPostByThreadId($threadId);
                 
-                if ($postModel->update($firstPost['post_id'], $postData)) {
-                    setFlashMessage('Thread updated successfully.', 'success');
-                    redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+                if ($firstPost) {
+                    // Update first post
+                    $postData = [
+                        'content' => $content,
+                        'edited_by' => $_SESSION['user_id'],
+                        'updated_at' => date('Y-m-d H:i:s')
+                    ];
+                    
+                    if ($postModel->update($firstPost['post_id'], $postData)) {
+                        // Add post history
+                        try {
+                            $historyQuery = "INSERT INTO forum_post_history (post_id, previous_content, edited_by, edited_at) 
+                                            VALUES (?, ?, ?, ?)";
+                            $historyParams = [$firstPost['post_id'], $firstPost['content'], $_SESSION['user_id'], date('Y-m-d H:i:s')];
+                            $db->query($historyQuery, $historyParams);
+                        } catch (Exception $historyEx) {
+                            // Log but continue if history table doesn't exist yet
+                            error_log("Could not add post history: " . $historyEx->getMessage());
+                        }
+                        
+                        // Commit transaction
+                        $db->commit();
+                        
+                        setFlashMessage('Thread updated successfully.', 'success');
+                        redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+                    } else {
+                        // Rollback transaction
+                        $db->rollback();
+                        setFlashMessage('Failed to update thread content. Please try again.', 'danger');
+                    }
                 } else {
-                    setFlashMessage('Failed to update thread content. Please try again.', 'danger');
+                    // Commit transaction (only thread title was updated)
+                    $db->commit();
+                    setFlashMessage('Thread updated successfully, but failed to update content.', 'warning');
+                    redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
                 }
             } else {
-                setFlashMessage('Thread updated successfully, but failed to update content.', 'warning');
-                redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+                // Rollback transaction
+                $db->rollback();
+                setFlashMessage('Failed to update thread. Please try again.', 'danger');
+                // Add redirect to prevent resubmission
+                redirect(BASE_URL . '/forum_thread_edit.php?id=' . $threadId);
             }
-        } else {
-            setFlashMessage('Failed to update thread. Please try again.', 'danger');
+        } catch (Exception $e) {
+            // Rollback transaction
+            $db->rollback();
+            error_log('Error updating thread: ' . $e->getMessage());
+            setFlashMessage('An error occurred while updating the thread. Please try again.', 'danger');
+            redirect(BASE_URL . '/forum_thread_edit.php?id=' . $threadId);
         }
     }
 }

@@ -420,7 +420,7 @@ include_once __DIR__ . '/includes/header.php';
     <?php endif; ?>
     
     <!-- Thread Actions -->
-    <?php if (isAdmin() || ($thread['user_id'] === $_SESSION['user_id'] && !$thread['is_locked'])): ?>
+    <?php if (isAdmin() || (isset($_SESSION['user_id']) && $thread['user_id'] === $_SESSION['user_id'] && !$thread['is_locked'])): ?>
         <div class="card mt-4">
             <div class="card-header">
                 <h2 class="h5 mb-0">Thread Actions</h2>
