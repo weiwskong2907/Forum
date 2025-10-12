@@ -70,8 +70,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_comment'])) {
 // Get categories for sidebar
 $categories = $categoryModel->getAll();
 
-// Page title
-$pageTitle = $post['title'];
+// Page title - use meta title if available
+$pageTitle = !empty($post['meta_title']) ? $post['meta_title'] : $post['title'];
+
+// Add meta description if available
+if (!empty($post['meta_description'])) {
+    $metaDescription = $post['meta_description'];
+}
 
 // Include header
 include_once __DIR__ . '/includes/header.php';

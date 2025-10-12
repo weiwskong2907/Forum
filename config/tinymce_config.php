@@ -24,14 +24,34 @@ function getTinymceCdnUrl() {
 function getTinymceDefaultOptions() {
     $options = [
         'height' => 400,
-        'menubar' => false,
+        'menubar' => true,
         'plugins' => [
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+            'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons',
+            'codesample', 'quickbars', 'autoresize', 'pagebreak'
         ],
-        'toolbar' => 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help',
-        'content_style' => 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+        'toolbar' => 'undo redo | blocks | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media codesample emoticons | removeformat | help',
+        'content_style' => 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }',
+        'image_advtab' => true,
+        'image_caption' => true,
+        'media_live_embeds' => true,
+        'media_alt_source' => true,
+        'media_poster' => true,
+        'media_dimensions' => true,
+        'codesample_languages' => [
+            ['text' => 'HTML/XML', 'value' => 'markup'],
+            ['text' => 'JavaScript', 'value' => 'javascript'],
+            ['text' => 'CSS', 'value' => 'css'],
+            ['text' => 'PHP', 'value' => 'php'],
+            ['text' => 'Python', 'value' => 'python'],
+            ['text' => 'Java', 'value' => 'java'],
+            ['text' => 'C', 'value' => 'c'],
+            ['text' => 'C#', 'value' => 'csharp'],
+            ['text' => 'C++', 'value' => 'cpp']
+        ],
+        'quickbars_selection_toolbar' => 'bold italic | quicklink h2 h3 blockquote',
+        'quickbars_insert_toolbar' => 'image media table'
     ];
     
     return json_encode($options);

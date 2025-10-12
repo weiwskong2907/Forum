@@ -46,6 +46,7 @@ $db = Database::getInstance();
 
 // Helper functions
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/browser_cache.php';
 
 // Set secure headers
 Security::setSecureHeaders();

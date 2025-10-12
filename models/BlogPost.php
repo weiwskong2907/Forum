@@ -42,10 +42,10 @@ class BlogPost {
                  FROM blog_posts p 
                  JOIN blog_categories c ON p.category_id = c.category_id 
                  JOIN users u ON p.user_id = u.user_id 
-                 WHERE p.slug = ? AND p.status = 'published' 
+                 WHERE (p.slug = ? OR p.custom_slug = ?) AND p.status = 'published' 
                  LIMIT 1";
         
-        return $this->db->fetchRow($query, [$slug]);
+        return $this->db->fetchRow($query, [$slug, $slug]);
     }
     
     /**

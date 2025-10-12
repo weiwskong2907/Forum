@@ -45,6 +45,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $categoryId = (int)($_POST['category_id'] ?? 0);
     $status = $_POST['status'] ?? 'draft';
     $featuredImage = $_FILES['featured_image'] ?? null;
+    $customSlug = trim($_POST['custom_slug'] ?? '');
+    $metaTitle = trim($_POST['meta_title'] ?? '');
+    $metaDescription = trim($_POST['meta_description'] ?? '');
     
     $errors = [];
     
@@ -141,6 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'content' => $content,
             'category_id' => $categoryId,
             'status' => $status,
+            'custom_slug' => $customSlug,
+            'meta_title' => $metaTitle,
+            'meta_description' => $metaDescription,
             'updated_at' => date('Y-m-d H:i:s')
         ];
         
@@ -233,6 +239,32 @@ include_once __DIR__ . '/includes/header.php';
                                 <option value="draft" <?php echo (isset($status) && $status == 'draft') ? 'selected' : ''; ?>>Draft</option>
                                 <option value="published" <?php echo (isset($status) && $status == 'published') ? 'selected' : ''; ?>>Published</option>
                             </select>
+                        </div>
+                        
+                        <!-- SEO Settings -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">SEO Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="custom_slug" class="form-label">Custom URL Slug</label>
+                                    <input type="text" class="form-control" id="custom_slug" name="custom_slug" value="<?php echo htmlspecialchars($post['custom_slug'] ?? ''); ?>">
+                                    <div class="form-text">Leave empty to use auto-generated slug from title.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="meta_title" class="form-label">Meta Title</label>
+                                    <input type="text" class="form-control" id="meta_title" name="meta_title" value="<?php echo htmlspecialchars($post['meta_title'] ?? ''); ?>">
+                                    <div class="form-text">Leave empty to use post title.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="meta_description" class="form-label">Meta Description</label>
+                                    <textarea class="form-control" id="meta_description" name="meta_description" rows="3"><?php echo htmlspecialchars($post['meta_description'] ?? ''); ?></textarea>
+                                    <div class="form-text">Recommended length: 150-160 characters.</div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="d-flex justify-content-between">

@@ -20,6 +20,7 @@ if (empty($slug)) {
 $threadModel = new ForumThread();
 $postModel = new ForumPost();
 $subforumModel = new ForumSubforum();
+$reactionModel = new ForumReaction();
 
 // Get thread
 $thread = $threadModel->getBySlug($slug);
@@ -99,6 +100,31 @@ if ($requestedPostId !== null) {
     }
 }
 
+// Process reactions
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['react'])) {
+    // Check if user is logged in
+    if (!isLoggedIn()) {
+        setFlashMessage('You must be logged in to react to posts.', 'danger');
+        redirect(BASE_URL . '/login.php');
+    }
+    
+    // Verify CSRF token
+    if (!verifyCSRFToken($_POST['csrf_token'] ?? '')) {
+        setFlashMessage('Invalid request. Please try again.', 'danger');
+        redirect(BASE_URL . '/forum_thread.php?slug=' . $slug);
+    }
+    
+    $postId = (int)($_POST['post_id'] ?? 0);
+    $reactionType = $_POST['reaction_type'] ?? '';
+    
+    if ($postId > 0 && in_array($reactionType, ['like', 'heart'])) {
+        $reactionModel->toggleReaction($postId, $_SESSION['user_id'], $reactionType);
+    }
+    
+    // Redirect back to the same page and post
+    redirect(BASE_URL . '/forum_thread.php?slug=' . $slug . '&page=' . $page . '#post-' . $postId);
+}
+
 // Process reply form
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_reply'])) {
     // Check if user is logged in
@@ -144,6 +170,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_reply'])) {
         }
     }
 }
+
+// Set browser cache for this page
+$cacheData = $thread['thread_id'] . '_' . $thread['updated_at'] . '_' . $page;
+setDynamicContentCache($cacheData, 300); // 5 minutes cache
 
 // Page title
 $pageTitle = $thread['title'];
@@ -296,6 +326,58 @@ include_once __DIR__ . '/includes/header.php';
                                 $content = preg_replace('/(src=["\']((?!http|https|ftp|\/\/)[^"\']+)["\'])/i', 'src="' . BASE_URL . '/$2"', $content);
                                 echo $content; 
                                 ?>
+                            </div>
+                            
+                            <!-- Post Reactions -->
+                            <div class="post-reactions mt-3 pt-3 border-top">
+                                <?php 
+                                // Get reactions for this post
+                                $postReactions = $reactionModel->getReactionsByPostId($post['post_id']);
+                                
+                                // Get user's reactions if logged in
+                                $userReactions = [];
+                                if (isLoggedIn()) {
+                                    $userReactions = $reactionModel->getUserReactions($post['post_id'], $_SESSION['user_id']);
+                                }
+                                
+                                // Reaction types and their icons
+                                $reactionTypes = [
+                                    'like' => ['icon' => 'bi-hand-thumbs-up', 'label' => 'Like'],
+                                    'heart' => ['icon' => 'bi-heart', 'label' => 'Heart']
+                                ];
+                                ?>
+                                
+                                <div class="d-flex align-items-center">
+                                    <?php if (isLoggedIn()): ?>
+                                        <?php foreach ($reactionTypes as $type => $reaction): ?>
+                                            <form method="post" class="me-3">
+                                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                                <input type="hidden" name="post_id" value="<?php echo $post['post_id']; ?>">
+                                                <input type="hidden" name="reaction_type" value="<?php echo $type; ?>">
+                                                
+                                                <button type="submit" name="react" class="btn btn-sm <?php echo in_array($type, $userReactions) ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                                                    <i class="bi <?php echo $reaction['icon']; ?> me-1"></i>
+                                                    <?php echo $reaction['label']; ?>
+                                                    <?php if (isset($postReactions[$type]) && $postReactions[$type] > 0): ?>
+                                                        <span class="badge bg-light text-dark ms-1"><?php echo $postReactions[$type]; ?></span>
+                                                    <?php endif; ?>
+                                                </button>
+                                            </form>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <?php foreach ($reactionTypes as $type => $reaction): ?>
+                                            <div class="me-3">
+                                                <button class="btn btn-sm btn-outline-secondary" disabled>
+                                                    <i class="bi <?php echo $reaction['icon']; ?> me-1"></i>
+                                                    <?php echo $reaction['label']; ?>
+                                                    <?php if (isset($postReactions[$type]) && $postReactions[$type] > 0): ?>
+                                                        <span class="badge bg-light text-dark ms-1"><?php echo $postReactions[$type]; ?></span>
+                                                    <?php endif; ?>
+                                                </button>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                             
                             <?php if ($post['created_at'] !== $post['updated_at']): ?>

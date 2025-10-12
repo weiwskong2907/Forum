@@ -78,6 +78,15 @@ include_once __DIR__ . '/includes/header.php';
                             <button type="submit" class="btn btn-primary" onclick="document.getElementById('loginForm').submit(); return false;">Login</button>
                         </div>
                     </form>
+                    
+                    <div class="mt-4 text-center">
+                        <p class="mb-2">Or sign in with:</p>
+                        <div class="d-grid gap-2">
+                            <a href="<?php echo BASE_URL; ?>/auth/google_login.php" class="btn btn-outline-danger">
+                                <i class="bi bi-google me-2"></i>Sign in with Google
+                            </a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-footer text-center">
                     <p class="mb-0">Don't have an account? <a href="<?php echo BASE_URL; ?>/register.php">Register</a></p>

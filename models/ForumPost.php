@@ -6,12 +6,14 @@
  */
 class ForumPost {
     private $db;
+    private $cache;
     
     /**
      * Constructor
      */
     public function __construct() {
         $this->db = Database::getInstance();
+        $this->cache = new SystemCache();
     }
     
     /**
@@ -39,6 +41,16 @@ class ForumPost {
      * @return array Posts
      */
     public function getByThreadId($threadId, $limit = 10, $offset = 0) {
+        // Create a cache key based on parameters
+        $cacheKey = "thread_posts_{$threadId}_{$limit}_{$offset}";
+        
+        // Try to get from cache first
+        $cachedResult = $this->cache->get($cacheKey, 'forum_posts');
+        if ($cachedResult !== null) {
+            return $cachedResult;
+        }
+        
+        // If not in cache, query the database
         $query = "SELECT p.*, u.username, COALESCE(u.avatar, 'assets/default-avatar.svg') as avatar 
                  FROM forum_posts p 
                  JOIN users u ON p.user_id = u.user_id 
@@ -46,7 +58,12 @@ class ForumPost {
                  ORDER BY p.created_at ASC 
                  LIMIT ?, ?";
         
-        return $this->db->fetchAll($query, [$threadId, $offset, $limit]);
+        $result = $this->db->fetchAll($query, [$threadId, $offset, $limit]);
+        
+        // Store in cache for 5 minutes (300 seconds)
+        $this->cache->set($cacheKey, $result, 'forum_posts', 300);
+        
+        return $result;
     }
     
     /**
@@ -73,12 +90,27 @@ class ForumPost {
      * @return int Post count
      */
     public function countByThreadId($threadId) {
+        // Create a cache key
+        $cacheKey = "thread_post_count_{$threadId}";
+        
+        // Try to get from cache first
+        $cachedCount = $this->cache->get($cacheKey, 'forum_counts');
+        if ($cachedCount !== null) {
+            return $cachedCount;
+        }
+        
+        // If not in cache, query the database
         $query = "SELECT COUNT(*) as count 
                  FROM forum_posts 
                  WHERE thread_id = ?";
         
         $result = $this->db->fetchRow($query, [$threadId]);
-        return $result['count'] ?? 0;
+        $count = $result['count'] ?? 0;
+        
+        // Store in cache for 5 minutes (300 seconds)
+        $this->cache->set($cacheKey, $count, 'forum_counts', 300);
+        
+        return $count;
     }
     
     /**
@@ -192,22 +224,87 @@ class ForumPost {
      * @return int|bool Post ID or false on failure
      */
     public function create($data) {
-        // Prepare post data
-        $postData = [
-            'thread_id' => $data['thread_id'],
-            'user_id' => $data['user_id'],
-            'content' => $data['content']
-        ];
+        $query = "INSERT INTO forum_posts (thread_id, user_id, content, created_at) 
+                 VALUES (?, ?, ?, NOW())";
         
-        // Insert post
-        $postId = $this->db->insert('forum_posts', $postData);
+        $stmt = $this->db->query($query, [
+            $data['thread_id'],
+            $data['user_id'],
+            $data['content']
+        ]);
         
-        if ($postId) {
-            // Update thread's last_post_at timestamp
-            $this->db->query("UPDATE forum_threads SET last_post_at = NOW() WHERE thread_id = ?", [$data['thread_id']]);
+        if ($stmt) {
+            $postId = $this->db->lastInsertId();
+            
+            // Update thread's last post timestamp
+            $threadQuery = "UPDATE forum_threads SET 
+                           last_post_at = NOW(), 
+                           post_count = post_count + 1 
+                           WHERE thread_id = ?";
+            
+            $this->db->query($threadQuery, [$data['thread_id']]);
+            
+            // Send notifications to subscribers
+            $this->notifySubscribers($data['thread_id'], $postId, $data['user_id']);
+            
+            // Clear cache for this thread
+            $this->cache->clearByType('forum_posts');
+            $this->cache->clearByType('forum_counts');
+            
+            return $postId;
         }
         
-        return $postId;
+        return false;
+    }
+    
+    /**
+     * Notify subscribers of new post
+     * 
+     * @param int $threadId Thread ID
+     * @param int $postId Post ID
+     * @param int $postUserId User ID who created the post
+     * @return void
+     */
+    private function notifySubscribers($threadId, $postId, $postUserId) {
+        // Get thread information
+        $threadQuery = "SELECT t.title, t.slug FROM forum_threads t WHERE t.thread_id = ?";
+        $thread = $this->db->fetchRow($threadQuery, [$threadId]);
+        
+        if (!$thread) {
+            return;
+        }
+        
+        // Get all subscribers except the post author
+        $subscribersQuery = "SELECT s.user_id, u.email, u.username 
+                           FROM forum_subscriptions s 
+                           JOIN users u ON s.user_id = u.user_id 
+                           WHERE s.thread_id = ? AND s.user_id != ?";
+        
+        $subscribers = $this->db->fetchAll($subscribersQuery, [$threadId, $postUserId]);
+        
+        if (empty($subscribers)) {
+            return;
+        }
+        
+        // Create activity records for all subscribers
+        $activityValues = [];
+        $activityParams = [];
+        
+        foreach ($subscribers as $subscriber) {
+            $activityValues[] = "(?, ?, ?, ?, NOW(), 0)";
+            $activityParams[] = $subscriber['user_id'];
+            $activityParams[] = 'reply';
+            $activityParams[] = $postId;
+            $activityParams[] = $threadId;
+        }
+        
+        // Insert all activities in one query
+        if (!empty($activityValues)) {
+            $activityQuery = "INSERT INTO user_activities (user_id, activity_type, content_id, thread_id, created_at, is_read) VALUES " . 
+                            implode(", ", $activityValues);
+            
+            $this->db->query($activityQuery, $activityParams);
+        }
     }
     
     /**

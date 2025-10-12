@@ -49,17 +49,33 @@ class User {
     /**
      * Get user by email
      * 
-     * @param string $email Email
+     * @param string $email Email address
      * @return array|null User data or null if not found
      */
     public function getByEmail($email) {
-        $query = "SELECT u.user_id, u.username, u.email, u.role, u.created_at, p.avatar, p.bio, p.website 
+        $query = "SELECT u.user_id, u.username, u.email, u.password, u.role, u.created_at, u.google_id, p.avatar, p.bio, p.website 
                  FROM users u 
                  LEFT JOIN user_profiles p ON u.user_id = p.user_id 
-                 WHERE u.email = ? AND u.is_active = 1 
+                 WHERE u.email = ? 
                  LIMIT 1";
         
         return $this->db->fetchRow($query, [$email]);
+    }
+    
+    /**
+     * Get user by Google ID
+     * 
+     * @param string $googleId Google user ID
+     * @return array|null User data or null if not found
+     */
+    public function getByGoogleId($googleId) {
+        $query = "SELECT u.user_id, u.username, u.email, u.password, u.role, u.created_at, u.google_id, p.avatar, p.bio, p.website 
+                 FROM users u 
+                 LEFT JOIN user_profiles p ON u.user_id = p.user_id 
+                 WHERE u.google_id = ? 
+                 LIMIT 1";
+        
+        return $this->db->fetchRow($query, [$googleId]);
     }
     
     /**
